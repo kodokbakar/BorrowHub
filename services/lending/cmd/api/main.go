@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"borrowhub/services/lending/internal/config"
+	"borrowhub/services/lending/internal/httpapi"
 )
 
 const (
@@ -20,39 +21,91 @@ const (
 )
 
 func main() {
-	cfg, err := config.Load(defaultAddress)
-	if err != nil {
-		slog.Error("load configuration", "error", err)
-		os.Exit(1)
-	}
-
 	logger := slog.New(
 		slog.NewJSONHandler(os.Stdout, nil),
 	).With(
-		"service", serviceName,
-		"environment", cfg.Environment,
+		"service",
+		serviceName,
+	)
+
+	cfg, err := config.Load(defaultAddress)
+	if err != nil {
+		logger.Error(
+			"load configuration",
+			"error",
+			err,
+		)
+		os.Exit(1)
+	}
+
+	logger = logger.With(
+		"environment",
+		cfg.Environment,
 	)
 
 	var ready atomic.Bool
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, _ *http.Request) {
-		writeHealth(w, http.StatusOK, "ok")
-	})
+	mux.HandleFunc(
+		"GET /health/live",
+		func(w http.ResponseWriter, r *http.Request) {
+			httpapi.WriteJSON(
+				w,
+				r,
+				http.StatusOK,
+				map[string]string{
+					"status": "ok",
+				},
+			)
+		},
+	)
 
-	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, _ *http.Request) {
-		if !ready.Load() {
-			writeHealth(w, http.StatusServiceUnavailable, "unavailable")
-			return
-		}
+	mux.HandleFunc(
+		"GET /health/ready",
+		func(w http.ResponseWriter, r *http.Request) {
+			if !ready.Load() {
+				httpapi.WriteError(
+					w,
+					r,
+					http.StatusServiceUnavailable,
+					"SERVICE_NOT_READY",
+					"Service belum siap menerima request.",
+					nil,
+				)
+				return
+			}
 
-		writeHealth(w, http.StatusOK, "ok")
-	})
+			httpapi.WriteJSON(
+				w,
+				r,
+				http.StatusOK,
+				map[string]string{
+					"status": "ok",
+				},
+			)
+		},
+	)
 
-	server := http.Server{
-		Addr:              cfg.HTTPAddress,
-		Handler:           mux,
+	mux.HandleFunc(
+		"/",
+		func(w http.ResponseWriter, r *http.Request) {
+			httpapi.WriteError(
+				w,
+				r,
+				http.StatusNotFound,
+				"ROUTE_NOT_FOUND",
+				"Route tidak ditemukan.",
+				nil,
+			)
+		},
+	)
+
+	server := &http.Server{
+		Addr: cfg.HTTPAddress,
+		Handler: httpapi.RequestIDs(
+			httpapi.Logging(logger)(mux),
+		),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -75,21 +128,31 @@ func main() {
 		defer cancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			logger.Error("shutdown server", "error", err)
+			logger.Error(
+				"shutdown server",
+				"error",
+				err,
+			)
 		}
 	}()
 
 	ready.Store(true)
-	logger.Info("server started", "address", cfg.HTTPAddress)
 
-	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("server stopped", "error", err)
+	logger.Info(
+		"server started",
+		"address",
+		cfg.HTTPAddress,
+	)
+
+	if err := server.ListenAndServe(); !errors.Is(
+		err,
+		http.ErrServerClosed,
+	) {
+		logger.Error(
+			"server stopped",
+			"error",
+			err,
+		)
 		os.Exit(1)
 	}
-}
-
-func writeHealth(w http.ResponseWriter, status int, value string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_, _ = w.Write([]byte(`{"status":"` + value + `"}`))
 }
