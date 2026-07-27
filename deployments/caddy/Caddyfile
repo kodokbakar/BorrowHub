@@ -1,0 +1,40 @@
+{
+	auto_https off
+	admin off
+}
+
+:8080 {
+	@web host borrowhub.localhost
+	handle @web {
+		reverse_proxy 127.0.0.1:5173 {
+			header_up Host localhost:5173
+		}
+	}
+
+	@identity host identity.borrowhub.localhost
+	handle @identity {
+		reverse_proxy 127.0.0.1:8081
+	}
+
+	@inventory host inventory.borrowhub.localhost
+	handle @inventory {
+		reverse_proxy 127.0.0.1:8082
+	}
+
+	@lending host lending.borrowhub.localhost
+	handle @lending {
+		reverse_proxy 127.0.0.1:8083
+	}
+
+	@rabbitmq host rabbitmq.borrowhub.localhost
+	handle @rabbitmq {
+		reverse_proxy 127.0.0.1:15672
+	}
+
+	@mailpit host mail.borrowhub.localhost
+	handle @mailpit {
+		reverse_proxy 127.0.0.1:8025
+	}
+
+	respond "unknown local host" 404
+}

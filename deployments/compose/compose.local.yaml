@@ -1,6 +1,12 @@
 name: borrowhub
 
 services:
+  caddy:
+    image: caddy:2.11.3-alpine
+    network_mode: host
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+
   postgres:
     image: postgres:18.4-alpine
     environment:
