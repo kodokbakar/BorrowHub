@@ -1,0 +1,33 @@
+openapi: 3.1.0
+
+info:
+  title: BorrowHub Identity Service API
+  version: 0.1.0
+
+servers:
+  - url: http://identity.borrowhub.localhost:8080
+
+security: []
+
+paths:
+  /health/live:
+    get:
+      summary: Periksa liveness Identity Service
+      operationId: identityHealthLive
+      tags:
+        - Health
+      responses:
+        "200":
+          $ref: "./common.yaml#/components/responses/HealthOK"
+
+  /health/ready:
+    get:
+      summary: Periksa readiness Identity Service
+      operationId: identityHealthReady
+      tags:
+        - Health
+      responses:
+        "200":
+          $ref: "./common.yaml#/components/responses/HealthOK"
+        "503":
+          $ref: "./common.yaml#/components/responses/ServiceNotReady"

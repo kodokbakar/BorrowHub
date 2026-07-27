@@ -1,0 +1,33 @@
+openapi: 3.1.0
+
+info:
+  title: BorrowHub Inventory Service API
+  version: 0.1.0
+
+servers:
+  - url: http://inventory.borrowhub.localhost:8080
+
+security: []
+
+paths:
+  /health/live:
+    get:
+      summary: Periksa liveness Inventory Service
+      operationId: inventoryHealthLive
+      tags:
+        - Health
+      responses:
+        "200":
+          $ref: "./common.yaml#/components/responses/HealthOK"
+
+  /health/ready:
+    get:
+      summary: Periksa readiness Inventory Service
+      operationId: inventoryHealthReady
+      tags:
+        - Health
+      responses:
+        "200":
+          $ref: "./common.yaml#/components/responses/HealthOK"
+        "503":
+          $ref: "./common.yaml#/components/responses/ServiceNotReady"

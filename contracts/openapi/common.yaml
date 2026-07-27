@@ -1,0 +1,103 @@
+openapi: 3.1.0
+
+info:
+  title: BorrowHub Common Contracts
+  version: 0.1.0
+
+paths: {}
+
+components:
+  headers:
+    RequestID:
+      description: Identifier unik untuk request.
+      schema:
+        type: string
+
+    CorrelationID:
+      description: Identifier untuk melacak operasi lintas service.
+      schema:
+        type: string
+
+  schemas:
+    Meta:
+      type: object
+      required:
+        - request_id
+      properties:
+        request_id:
+          type: string
+
+    SuccessEnvelope:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data: {}
+        meta:
+          $ref: "#/components/schemas/Meta"
+
+    ErrorDetail:
+      type: object
+      required:
+        - code
+        - message
+        - request_id
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        fields:
+          type: object
+          additionalProperties: true
+        request_id:
+          type: string
+
+    ErrorEnvelope:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorDetail"
+
+    Health:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+
+  responses:
+    HealthOK:
+      description: Service sehat.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestID"
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationID"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/SuccessEnvelope"
+              - type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Health"
+
+    ServiceNotReady:
+      description: Service belum siap menerima request.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestID"
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationID"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
