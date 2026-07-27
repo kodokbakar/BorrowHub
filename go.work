@@ -1,0 +1,8 @@
+go 1.26.4
+
+use (
+	./services/identity
+	./services/inventory
+	./services/lending
+	./workers/notification
+)
