@@ -1,9 +1,15 @@
-.PHONY: help structure verify
+COMPOSE := docker compose -f deployments/compose/compose.local.yaml
+
+.PHONY: help structure verify up down ps logs reset
 
 help:
-	@printf '%s\n' \
-		'make structure  Tampilkan struktur repository' \
-		'make verify     Verifikasi workspace awal'
+	@echo "make structure  Tampilkan struktur repository"
+	@echo "make verify     Verifikasi workspace"
+	@echo "make up         Jalankan local stack"
+	@echo "make down       Hentikan local stack"
+	@echo "make ps         Tampilkan status local stack"
+	@echo "make logs       Ikuti log local stack"
+	@echo "make reset      Hapus local stack beserta datanya"
 
 structure:
 	@find . \
@@ -21,4 +27,20 @@ verify:
 	@test -f services/lending/go.mod
 	@test -f workers/notification/go.mod
 	@go work edit -json >/dev/null
-	@printf '%s\n' 'M0-001 verification passed'
+	@$(COMPOSE) config --quiet
+	@echo "Workspace verification passed"
+
+up:
+	@$(COMPOSE) up -d --wait
+
+down:
+	@$(COMPOSE) down
+
+ps:
+	@$(COMPOSE) ps
+
+logs:
+	@$(COMPOSE) logs -f
+
+reset:
+	@$(COMPOSE) down -v
