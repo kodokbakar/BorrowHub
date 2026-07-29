@@ -1,0 +1,86 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.work
+          cache: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: go
+          build-mode: manual
+
+      - name: Build
+        run: |
+          go build \
+            ./services/identity/cmd/api \
+            ./services/inventory/cmd/api \
+            ./services/lending/cmd/api \
+            ./workers/notification/cmd/worker
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git \
+            --redact \
+            --no-banner \
+            --no-color \
+            /repo
+
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Scan dependencies
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table

@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.work
+          cache: false
+
+      - name: Check formatting
+        run: |
+          gofmt -l services workers | tee /tmp/gofmt.out
+          test ! -s /tmp/gofmt.out
+
+      - name: Vet
+        run: |
+          go vet \
+            ./services/identity/... \
+            ./services/inventory/... \
+            ./services/lending/... \
+            ./workers/notification/...
+
+      - name: Test
+        run: |
+          go test -race \
+            ./services/identity/... \
+            ./services/inventory/... \
+            ./services/lending/... \
+            ./workers/notification/...
+
+      - name: Build
+        run: |
+          go build \
+            ./services/identity/cmd/api \
+            ./services/inventory/cmd/api \
+            ./services/lending/cmd/api \
+            ./workers/notification/cmd/worker
+
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate OpenAPI
+        run: |
+          docker run --rm \
+            -v "$PWD/contracts/openapi:/spec" \
+            redocly/cli:2.41.1 \
+            lint \
+            --config=/spec/redocly.yaml \
+            /spec/identity.yaml \
+            /spec/inventory.yaml \
+            /spec/lending.yaml
+
+      - name: Validate event envelope
+        run: |
+          python3 -m json.tool \
+            contracts/events/envelope.schema.json \
+            >/dev/null
