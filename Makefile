@@ -1,14 +1,35 @@
 COMPOSE := docker compose -f deployments/compose/compose.local.yaml
 
+GO_PACKAGES := \
+	./services/identity/... \
+	./services/inventory/... \
+	./services/lending/... \
+	./workers/notification/...
+
+GO_BINARIES := \
+	./services/identity/cmd/api \
+	./services/inventory/cmd/api \
+	./services/lending/cmd/api \
+	./workers/notification/cmd/worker
+
 .PHONY: \
 	help \
+	bootstrap \
 	structure \
+	fmt \
+	fmt-check \
+	vet \
+	test \
+	build \
+	contracts \
+	compose-check \
 	verify \
 	up \
 	down \
 	ps \
 	logs \
 	reset \
+	seed \
 	dev-web \
 	dev-identity \
 	dev-inventory \
@@ -16,18 +37,27 @@ COMPOSE := docker compose -f deployments/compose/compose.local.yaml
 	health
 
 help:
-	@echo "make structure       Tampilkan struktur repository"
-	@echo "make verify          Verifikasi workspace"
-	@echo "make up              Jalankan local stack"
-	@echo "make down            Hentikan local stack"
-	@echo "make ps              Tampilkan status local stack"
-	@echo "make logs            Ikuti log local stack"
-	@echo "make reset           Hapus local stack beserta datanya"
+	@echo "make bootstrap       Install dependency"
+	@echo "make fmt             Format kode Go"
+	@echo "make test            Jalankan backend test"
+	@echo "make build           Build backend dan frontend"
+	@echo "make contracts       Validasi API dan event contract"
+	@echo "make verify          Jalankan seluruh pemeriksaan"
+	@echo "make up              Jalankan local infrastructure"
+	@echo "make down            Hentikan local infrastructure"
+	@echo "make ps              Tampilkan status container"
+	@echo "make logs            Ikuti log container"
+	@echo "make reset           Hapus container dan local data"
+	@echo "make seed            Tambahkan development seed"
 	@echo "make dev-web         Jalankan frontend"
 	@echo "make dev-identity    Jalankan Identity Service"
 	@echo "make dev-inventory   Jalankan Inventory Service"
 	@echo "make dev-lending     Jalankan Lending Service"
-	@echo "make health          Periksa health seluruh service"
+	@echo "make health          Periksa health semua service"
+	@echo "make structure       Tampilkan struktur repository"
+
+bootstrap:
+	@bun install --frozen-lockfile
 
 structure:
 	@find . \
@@ -36,23 +66,51 @@ structure:
 		-not -path './node_modules*' \
 		| sort
 
-verify:
-	@test -f package.json
-	@test -f bun.lock
-	@test -f go.work
-	@test -f services/identity/go.mod
-	@test -f services/inventory/go.mod
-	@test -f services/lending/go.mod
-	@test -f workers/notification/go.mod
-	@go work edit -json >/dev/null
-	@go test ./services/identity/...
-	@go test ./services/inventory/...
-	@go test ./services/lending/...
+fmt:
+	@find services workers \
+		-type f \
+		-name '*.go' \
+		-exec gofmt -w {} +
+
+fmt-check:
+	@test -z "$$(find services workers \
+		-type f \
+		-name '*.go' \
+		-exec gofmt -l {} +)"
+
+vet:
+	@go vet $(GO_PACKAGES)
+
+test:
+	@go test -race $(GO_PACKAGES)
+
+build:
+	@go build $(GO_BINARIES)
+	@bun run typecheck:web
+	@bun run build:web
+
+contracts:
+	@docker run --rm \
+		-v "$(CURDIR)/contracts/openapi:/spec" \
+		redocly/cli:2.41.1 \
+		lint \
+		--config=/spec/redocly.yaml \
+		/spec/identity.yaml \
+		/spec/inventory.yaml \
+		/spec/lending.yaml
+	@python3 -m json.tool \
+		contracts/events/envelope.schema.json \
+		>/dev/null
+
+compose-check:
 	@$(COMPOSE) config --quiet
 	@$(COMPOSE) run --rm --no-deps caddy \
 		caddy validate \
 		--config /etc/caddy/Caddyfile
-	@echo "Workspace verification passed"
+
+verify: fmt-check vet test build contracts compose-check
+	@go work edit -json >/dev/null
+	@echo "Verification passed"
 
 up:
 	@$(COMPOSE) up -d --wait
@@ -68,6 +126,15 @@ logs:
 
 reset:
 	@$(COMPOSE) down -v
+
+seed:
+	@$(COMPOSE) up -d --wait postgres
+	@$(COMPOSE) exec -T postgres \
+		psql \
+		-v ON_ERROR_STOP=1 \
+		-U borrowhub \
+		-d postgres \
+		< scripts/seed/development.sql
 
 dev-web:
 	@bun run dev:web
@@ -103,25 +170,3 @@ health:
 	@curl --fail --silent --show-error \
 		http://lending.borrowhub.localhost:8080/health/ready
 	@echo
-
-.PHONY: test test-integration
-
-test:
-	@go test -timeout=30s ./services/identity/...
-	@go test -timeout=30s ./services/inventory/...
-	@go test -timeout=30s ./services/lending/...
-	@go test -timeout=30s ./workers/notification/...
-
-test-integration: up
-	@DATABASE_URL='postgres://borrowhub_identity:borrowhub_identity@127.0.0.1:5432/borrowhub_identity?sslmode=disable' \
-		EXPECTED_DATABASE='borrowhub_identity' \
-		go test -count=1 -tags=integration -timeout=30s ./services/identity/...
-	@DATABASE_URL='postgres://borrowhub_inventory:borrowhub_inventory@127.0.0.1:5432/borrowhub_inventory?sslmode=disable' \
-		EXPECTED_DATABASE='borrowhub_inventory' \
-		go test -count=1 -tags=integration -timeout=30s ./services/inventory/...
-	@DATABASE_URL='postgres://borrowhub_lending:borrowhub_lending@127.0.0.1:5432/borrowhub_lending?sslmode=disable' \
-		EXPECTED_DATABASE='borrowhub_lending' \
-		go test -count=1 -tags=integration -timeout=30s ./services/lending/...
-	@DATABASE_URL='postgres://borrowhub_notification:borrowhub_notification@127.0.0.1:5432/borrowhub_notification?sslmode=disable' \
-		EXPECTED_DATABASE='borrowhub_notification' \
-		go test -count=1 -tags=integration -timeout=30s ./workers/notification/...
