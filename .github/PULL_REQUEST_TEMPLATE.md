@@ -1,22 +1,54 @@
-## Masalah
+## Problem
 
-Jelaskan masalah yang diselesaikan.
+Describe the problem this pull request solves.
 
-## Perubahan
+## Solution
 
-- 
+Describe the smallest implemented solution and the main design decisions.
 
-## Pengujian
+## Scope
 
-- [ ] Unit test
-- [ ] Integration test
-- [ ] Verifikasi manual
+List the affected services, applications, contracts, or infrastructure.
 
-## Contract dan migration
+## Contract changes
 
-- [ ] Tidak ada perubahan contract
-- [ ] Tidak ada perubahan database
+* [ ] No API contract changes
+* [ ] OpenAPI contract updated
+* [ ] Event contract updated
+* [ ] Breaking change documented
 
-## Keamanan dan rollback
+## Database changes
 
-Jelaskan dampak keamanan dan cara rollback.
+* [ ] No database changes
+* [ ] Migration added
+* [ ] Upgrade path tested
+* [ ] Rollback impact documented
+
+## Security
+
+Describe authentication, authorization, tenant isolation, sensitive data, or supply-chain impact.
+
+## Testing
+
+List the automated and manual checks performed.
+
+```text
+make verify
+```
+
+## Rollback
+
+Explain how this change can be reverted safely.
+
+## Screenshots
+
+Add screenshots for user interface changes when relevant.
+
+## Checklist
+
+* [ ] The change is focused and reviewable.
+* [ ] Tests cover the changed behavior.
+* [ ] Logs do not expose sensitive data.
+* [ ] Documentation is updated.
+* [ ] No unnecessary dependency was added.
+* [ ] Known limitations are documented.

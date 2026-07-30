@@ -1,0 +1,62 @@
+name: Feature request
+description: Propose a concrete product or engineering improvement
+title: "[Feature]: "
+labels:
+  - feature
+
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem should this solve?
+      description: Describe the current limitation, not only the proposed implementation.
+      placeholder: Explain who is affected and what they cannot do.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What outcome is needed?
+      placeholder: Describe the smallest useful outcome.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Web
+        - Identity Service
+        - Inventory Service
+        - Lending Service
+        - Notification Worker
+        - Contracts
+        - Infrastructure
+        - Documentation
+        - Cross-service
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include existing features or simpler approaches that were considered.
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and risks
+      placeholder: Security, migration, compatibility, accessibility, or operational concerns
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: This request describes a current need rather than speculative future work.
+          required: true
