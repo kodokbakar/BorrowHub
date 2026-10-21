@@ -3,6 +3,7 @@ openapi: 3.1.0
 info:
   title: BorrowHub Inventory Service API
   version: 0.1.0
+  description: Inventory management service for BorrowHub categories, items, and physical units.
 
 servers:
   - url: http://inventory.borrowhub.localhost:8080
@@ -31,3 +32,943 @@ paths:
           $ref: "./common.yaml#/components/responses/HealthOK"
         "503":
           $ref: "./common.yaml#/components/responses/ServiceNotReady"
+
+  /api/v1/organizations/{organizationId}/categories:
+    get:
+      summary: List all categories for an organization
+      operationId: listCategories
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Category"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      summary: Create a category
+      operationId: createCategory
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/categories/{categoryId}:
+    patch:
+      summary: Update a category
+      operationId: updateCategory
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      summary: Delete a category
+      operationId: deleteCategory
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Category deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/organizations/{organizationId}/items:
+    get:
+      summary: List items for an organization
+      operationId: listItems
+      tags:
+        - Items
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of items
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Item"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    post:
+      summary: Create an item
+      operationId: createItem
+      tags:
+        - Items
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemRequest"
+      responses:
+        "201":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Item"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/items/{itemId}:
+    get:
+      summary: Get item by ID
+      operationId: getItem
+      tags:
+        - Items
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Item details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Item"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      summary: Update an item
+      operationId: updateItem
+      tags:
+        - Items
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemRequest"
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Item"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      summary: Delete an item
+      operationId: deleteItem
+      tags:
+        - Items
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Item deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/items/{itemId}/units:
+    get:
+      summary: List units for an item
+      operationId: listUnits
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of units
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Unit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      summary: Add a physical unit to an item
+      operationId: createUnit
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUnitRequest"
+      responses:
+        "201":
+          description: Unit created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/units/{unitId}:
+    get:
+      summary: Get unit details by ID
+      operationId: getUnit
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: unitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Unit details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Unit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      summary: Update a unit condition, status, or metadata
+      operationId: updateUnit
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: unitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUnitRequest"
+      responses:
+        "200":
+          description: Unit updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/units/{unitId}/condition-logs:
+    get:
+      summary: Get append-only condition history for a unit
+      operationId: getConditionLogs
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: unitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of condition history logs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ConditionLog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/internal/items/{itemId}/eligible-units:
+    get:
+      summary: Lending internal check for available units
+      operationId: getInternalEligibleUnits
+      tags:
+        - Internal
+      security:
+        - internalTokenAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of available units eligible for lending
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Unit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/internal/units/{unitId}/status:
+    patch:
+      summary: Lending internal compare-and-swap unit status transition
+      operationId: updateInternalUnitStatus
+      tags:
+        - Internal
+      security:
+        - internalTokenAuth: []
+      parameters:
+        - name: unitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InternalUnitStatusRequest"
+      responses:
+        "200":
+          description: Unit status successfully transitioned
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+    internalTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Internal-Token
+
+  schemas:
+    UnitStatus:
+      type: string
+      enum:
+        - available
+        - reserved
+        - borrowed
+        - maintenance
+        - retired
+
+    UnitCondition:
+      type: string
+      enum:
+        - new
+        - good
+        - fair
+        - poor
+        - damaged
+
+    Category:
+      type: object
+      required:
+        - id
+        - organization_id
+        - name
+        - slug
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+        - slug
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+
+    Item:
+      type: object
+      required:
+        - id
+        - organization_id
+        - category_id
+        - name
+        - is_lendable
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        is_lendable:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateItemRequest:
+      type: object
+      required:
+        - category_id
+        - name
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 2000
+        is_lendable:
+          type: boolean
+          default: true
+
+    UpdateItemRequest:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 2000
+        is_lendable:
+          type: boolean
+
+    Unit:
+      type: object
+      required:
+        - id
+        - organization_id
+        - item_id
+        - barcode
+        - status
+        - condition
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        barcode:
+          type: string
+        serial_number:
+          type: string
+        status:
+          $ref: "#/components/schemas/UnitStatus"
+        condition:
+          $ref: "#/components/schemas/UnitCondition"
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateUnitRequest:
+      type: object
+      required:
+        - barcode
+      properties:
+        barcode:
+          type: string
+          minLength: 3
+          maxLength: 64
+        serial_number:
+          type: string
+          maxLength: 128
+        status:
+          $ref: "#/components/schemas/UnitStatus"
+        condition:
+          $ref: "#/components/schemas/UnitCondition"
+        notes:
+          type: string
+          maxLength: 2000
+
+    UpdateUnitRequest:
+      type: object
+      properties:
+        barcode:
+          type: string
+          minLength: 3
+          maxLength: 64
+        serial_number:
+          type: string
+          maxLength: 128
+        status:
+          $ref: "#/components/schemas/UnitStatus"
+        condition:
+          $ref: "#/components/schemas/UnitCondition"
+        notes:
+          type: string
+          maxLength: 2000
+        reason:
+          type: string
+          maxLength: 500
+
+    ConditionLog:
+      type: object
+      required:
+        - id
+        - unit_id
+        - new_condition
+        - changed_by
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        previous_condition:
+          $ref: "#/components/schemas/UnitCondition"
+        new_condition:
+          $ref: "#/components/schemas/UnitCondition"
+        reason:
+          type: string
+        changed_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    InternalUnitStatusRequest:
+      type: object
+      required:
+        - from_status
+        - to_status
+      properties:
+        from_status:
+          $ref: "#/components/schemas/UnitStatus"
+        to_status:
+          $ref: "#/components/schemas/UnitStatus"
+
+    MessageResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+    Forbidden:
+      description: Insufficient permissions or not a member of organization
+      content:
+        application/json:
+          schema:
+            $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+    Conflict:
+      description: Resource conflict or duplicate identifier
+      content:
+        application/json:
+          schema:
+            $ref: "./common.yaml#/components/schemas/ErrorEnvelope"

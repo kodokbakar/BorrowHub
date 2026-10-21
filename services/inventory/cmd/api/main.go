@@ -11,8 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"borrowhub/services/inventory/internal/auth"
 	"borrowhub/services/inventory/internal/config"
 	"borrowhub/services/inventory/internal/httpapi"
+	"borrowhub/services/inventory/internal/repository"
+	"borrowhub/services/inventory/internal/service"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -43,70 +47,67 @@ func main() {
 		cfg.Environment,
 	)
 
+	poolCtx, poolCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	pool, err := pgxpool.New(poolCtx, cfg.DatabaseURL)
+	poolCancel()
+	if err != nil {
+		logger.Error(
+			"connect to database",
+			"error",
+			err,
+		)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	if err := repository.MigrateUp(cfg.DatabaseURL); err != nil {
+		logger.Error(
+			"run migrations",
+			"error",
+			err,
+		)
+		os.Exit(1)
+	}
+
 	var ready atomic.Bool
 
-	mux := http.NewServeMux()
+	readyCheck := func() bool {
+		if !ready.Load() {
+			return false
+		}
+		pingCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		return pool.Ping(pingCtx) == nil
+	}
 
-	mux.HandleFunc(
-		"GET /health/live",
-		func(w http.ResponseWriter, r *http.Request) {
-			httpapi.WriteJSON(
-				w,
-				r,
-				http.StatusOK,
-				map[string]string{
-					"status": "ok",
-				},
-			)
-		},
-	)
+	jwtMgr := auth.NewJWTManager(cfg.JWTSecret)
+	identityClient := auth.NewHTTPIdentityClient(cfg.IdentityBaseURL, cfg.InternalToken, 1*time.Minute)
+	repos := repository.NewRepositories(pool)
 
-	mux.HandleFunc(
-		"GET /health/ready",
-		func(w http.ResponseWriter, r *http.Request) {
-			if !ready.Load() {
-				httpapi.WriteError(
-					w,
-					r,
-					http.StatusServiceUnavailable,
-					"SERVICE_NOT_READY",
-					"Service belum siap menerima request.",
-					nil,
-				)
-				return
-			}
+	categorySvc := service.NewCategoryService(repos.Categories, identityClient)
+	itemSvc := service.NewItemService(repos.Items, repos.Categories, identityClient)
+	unitSvc := service.NewUnitService(repos.Units, repos.Items, identityClient)
+	internalSvc := service.NewInternalInventoryService(repos.Units, repos.Items)
 
-			httpapi.WriteJSON(
-				w,
-				r,
-				http.StatusOK,
-				map[string]string{
-					"status": "ok",
-				},
-			)
-		},
-	)
+	router := httpapi.NewRouter(httpapi.RouterDependencies{
+		CategoryService: categorySvc,
+		ItemService:     itemSvc,
+		UnitService:     unitSvc,
+		InternalService: internalSvc,
+		TokenManager:    jwtMgr,
+		ReadyCheck:      readyCheck,
+		InternalToken:   cfg.InternalToken,
+	})
 
-	mux.HandleFunc(
-		"/",
-		func(w http.ResponseWriter, r *http.Request) {
-			httpapi.WriteError(
-				w,
-				r,
-				http.StatusNotFound,
-				"ROUTE_NOT_FOUND",
-				"Route tidak ditemukan.",
-				nil,
-			)
-		},
-	)
+	handler := httpapi.RequestIDs(httpapi.Logging(logger)(router))
 
 	server := &http.Server{
-		Addr: cfg.HTTPAddress,
-		Handler: httpapi.RequestIDs(
-			httpapi.Logging(logger)(mux),
-		),
+		Addr:              cfg.HTTPAddress,
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	ctx, stop := signal.NotifyContext(
@@ -119,17 +120,17 @@ func main() {
 	go func() {
 		<-ctx.Done()
 
-		ready.Store(false)
-
 		shutdownCtx, cancel := context.WithTimeout(
 			context.Background(),
 			10*time.Second,
 		)
 		defer cancel()
 
+		ready.Store(false)
+
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			logger.Error(
-				"shutdown server",
+				"server shutdown",
 				"error",
 				err,
 			)
@@ -149,7 +150,7 @@ func main() {
 		http.ErrServerClosed,
 	) {
 		logger.Error(
-			"server stopped",
+			"listen and serve",
 			"error",
 			err,
 		)

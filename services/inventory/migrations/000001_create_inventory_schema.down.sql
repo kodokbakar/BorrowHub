@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS condition_logs;
+DROP TABLE IF EXISTS units;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS categories;
