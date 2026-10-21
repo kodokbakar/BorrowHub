@@ -80,8 +80,17 @@ export function BookingModal({
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         if (err.fields) console.error("Availability check fields:", err.fields);
+        const fieldDetails = err.fields
+          ? Object.entries(err.fields)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(", ")
+          : "";
+        const baseMessage =
+          err.status === 409 || err.code === "CONFLICT"
+            ? err.message || "Konflik ketersediaan unit untuk jadwal yang dipilih."
+            : err.message || "Gagal memeriksa ketersediaan.";
         setErrorFeedback({
-          message: err.message || "Gagal memeriksa ketersediaan",
+          message: fieldDetails ? `${baseMessage} (${fieldDetails})` : baseMessage,
           requestId: err.requestId,
         });
       } else {
@@ -142,18 +151,19 @@ export function BookingModal({
               .map(([k, v]) => `${k}: ${v}`)
               .join(", ")
           : "";
+        const baseMessage =
+          err.status === 409 || err.code === "CONFLICT"
+            ? err.message || "Jadwal bentrok atau unit tidak tersedia pada rentang waktu ini."
+            : err.message || "Gagal mengajukan peminjaman.";
         setErrorFeedback({
-          message: err.message
-            ? fieldDetails
-              ? `${err.message} (${fieldDetails})`
-              : err.message
-            : "Gagal mengajukan peminjaman.",
+          message: fieldDetails ? `${baseMessage} (${fieldDetails})` : baseMessage,
           requestId: err.requestId,
         });
       } else {
         setErrorFeedback({ message: "Terjadi kesalahan." });
       }
     } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -206,15 +216,16 @@ export function BookingModal({
         </div>
 
         {/* Live availability check section */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+        <div className="rounded-xl border border-border bg-surface-subtle p-3.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-700">
+            <span className="text-xs font-semibold text-fg">
               Pemeriksaan Ketersediaan Live
             </span>
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="md"
+              className="min-h-[44px]"
               onClick={handleCheckAvailability}
               isLoading={isCheckingAvail}
             >
@@ -223,20 +234,25 @@ export function BookingModal({
           </div>
 
           {availability && (
-            <div className="mt-2.5 flex items-center justify-between text-xs">
-              <span className="text-slate-600">
-                Tersedia: <strong>{availability.available_units}</strong> dari{" "}
+            <div
+              className={`mt-3 flex items-center justify-between p-3 rounded-lg border text-xs ${
+                availability.is_available
+                  ? "bg-status-available-bg text-status-available-fg border-status-available-border"
+                  : "bg-status-overdue-bg text-status-overdue-fg border-status-overdue-border"
+              }`}
+            >
+              <span className="font-medium font-tabular">
+                Tersedia: <strong className="font-bold">{availability.available_units}</strong> dari{" "}
                 {availability.total_units} unit
               </span>
               {availability.is_available ? (
-                <Badge variant="emerald">Unit Tersedia</Badge>
+                <Badge variant="available">Unit Tersedia</Badge>
               ) : (
-                <Badge variant="rose">Tidak Tersedia pada Jadwal Ini</Badge>
+                <Badge variant="overdue">Tidak Tersedia pada Jadwal Ini</Badge>
               )}
             </div>
           )}
         </div>
-
         <Input
           label="Tujuan Peminjaman"
           placeholder="Contoh: Liputan dokumentasi workshop tahunan"
@@ -246,22 +262,24 @@ export function BookingModal({
         />
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-fg mb-1">
             Catatan Tambahan (Opsional)
           </label>
           <textarea
             rows={2}
-            className="block w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 placeholder:text-slate-400"
+            className="block w-full min-h-[44px] rounded-lg border border-border-strong bg-surface p-2.5 text-sm text-fg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-fg-subtle"
             placeholder="Kebutuhan aksesoris tambahan atau catatan lokasi"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <Button
             type="button"
             variant="ghost"
+            size="md"
+            className="min-h-[44px]"
             onClick={onClose}
             disabled={isSubmitting}
           >
@@ -270,6 +288,8 @@ export function BookingModal({
           <Button
             type="submit"
             variant="primary"
+            size="md"
+            className="min-h-[44px]"
             isLoading={isSubmitting}
             disabled={availability !== null && !availability.is_available}
           >

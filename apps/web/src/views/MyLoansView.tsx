@@ -14,10 +14,16 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useAuth } from "../context/AuthContext";
 
-export function MyLoansView() {
+export interface MyLoansViewProps {
+  initialTab?: "requests" | "loans";
+}
+
+export function MyLoansView({
+  initialTab = "requests",
+}: MyLoansViewProps = {}) {
   const { user, activeOrg } = useAuth();
   const orgId = activeOrg?.id;
-  const [subTab, setSubTab] = useState<"requests" | "loans">("requests");
+  const [subTab, setSubTab] = useState<"requests" | "loans">(initialTab);
   const queryClient = useQueryClient();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<{
@@ -141,12 +147,12 @@ export function MyLoansView() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-fg">
           Peminjaman Saya
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-fg-muted">
           Pantau status permohonan pinjam dan barang yang sedang Anda gunakan di{" "}
-          <span className="font-semibold text-slate-800">{activeOrg.name}</span>.
+          <span className="font-semibold text-fg">{activeOrg.name}</span>.
         </p>
       </div>
 
@@ -160,25 +166,33 @@ export function MyLoansView() {
       )}
 
       {/* Sub Tabs */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-border gap-2" role="tablist">
         <button
+          id="tab-requests"
           type="button"
+          role="tab"
+          aria-selected={subTab === "requests"}
+          aria-controls="panel-requests"
           onClick={() => setSubTab("requests")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] inline-flex items-center px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             subTab === "requests"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-semibold"
+              : "border-transparent text-fg-muted hover:text-fg hover:border-border-strong"
           }`}
         >
           Permohonan Peminjaman ({myRequests.length})
         </button>
         <button
+          id="tab-loans"
           type="button"
+          role="tab"
+          aria-selected={subTab === "loans"}
+          aria-controls="panel-loans"
           onClick={() => setSubTab("loans")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] inline-flex items-center px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             subTab === "loans"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-semibold"
+              : "border-transparent text-fg-muted hover:text-fg hover:border-border-strong"
           }`}
         >
           Peminjaman Aktif & Selesai ({myLoans.length})
@@ -187,7 +201,7 @@ export function MyLoansView() {
 
       {/* Sub Tab: Requests */}
       {subTab === "requests" && (
-        <div>
+        <div role="tabpanel" id="panel-requests" aria-labelledby="tab-requests">
           {isLoadingRequests ? (
             <LoadingSpinner />
           ) : myRequests.length === 0 ? (
@@ -202,24 +216,24 @@ export function MyLoansView() {
                 return (
                   <div
                     key={req.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5 shadow-xs"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-slate-900">
+                        <h3 className="font-semibold text-fg">
                           {item?.name || `Item ID: ${req.item_id.slice(0, 8)}`}
                         </h3>
                         <RequestStatusBadge status={req.status} />
                       </div>
-                      <p className="text-xs text-slate-500">
-                        Jadwal: {formatDate(req.start_time)} s/d{" "}
-                        {formatDate(req.end_time)}
+                      <p className="text-xs text-fg-muted">
+                        Jadwal: <span className="font-tabular">{formatDate(req.start_time)}</span> s/d{" "}
+                        <span className="font-tabular">{formatDate(req.end_time)}</span>
                       </p>
-                      <p className="text-xs text-slate-600">
-                        <strong>Keperluan:</strong> {req.purpose}
+                      <p className="text-xs text-fg-muted">
+                        <strong className="text-fg">Keperluan:</strong> {req.purpose}
                       </p>
                       {req.review_notes && (
-                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-md mt-2">
+                        <p className="text-xs text-status-reserved-fg bg-status-reserved-bg border border-status-reserved-border p-2.5 rounded-md mt-2">
                           <strong>Catatan Peninjau:</strong> {req.review_notes}
                         </p>
                       )}
@@ -229,7 +243,8 @@ export function MyLoansView() {
                       {req.status === "pending" && (
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="md"
+                          className="min-h-[44px]"
                           onClick={() => handleCancelRequest(req.id)}
                           isLoading={cancellingId === req.id}
                         >
@@ -237,7 +252,7 @@ export function MyLoansView() {
                         </Button>
                       )}
                       {req.status === "approved" && (
-                        <span className="text-xs text-emerald-600 font-medium">
+                        <span className="text-xs text-status-available-fg font-medium">
                           Telah disetujui, siap diambil di Admin
                         </span>
                       )}
@@ -252,7 +267,7 @@ export function MyLoansView() {
 
       {/* Sub Tab: Loans */}
       {subTab === "loans" && (
-        <div>
+        <div role="tabpanel" id="panel-loans" aria-labelledby="tab-loans">
           {isLoadingLoans ? (
             <LoadingSpinner />
           ) : myLoans.length === 0 ? (
@@ -267,46 +282,46 @@ export function MyLoansView() {
                 return (
                   <div
                     key={loan.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-5 shadow-xs bg-white ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-5 shadow-xs transition-colors ${
                       isOverdue
-                        ? "border-rose-300 ring-1 ring-rose-200"
-                        : "border-slate-200"
+                        ? "border-status-overdue-border bg-status-overdue-bg/20 ring-1 ring-status-overdue-border text-status-overdue-fg font-bold"
+                        : "border-border bg-surface"
                     }`}
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-semibold text-fg font-mono font-tabular">
                           Pinjaman #{loan.id.slice(0, 8)}
                         </span>
                         <LoanStatusBadge status={loan.status} />
                       </div>
 
-                      <div className="text-xs text-slate-600 space-y-0.5">
+                      <div className="text-xs text-fg-muted space-y-0.5">
                         <p>
-                          <strong>Batas Pengembalian:</strong>{" "}
+                          <strong className="text-fg">Batas Pengembalian:</strong>{" "}
                           <span
                             className={
                               isOverdue
-                                ? "font-bold text-rose-600"
-                                : "text-slate-800"
+                                ? "font-bold text-status-overdue-fg font-tabular"
+                                : "text-fg font-tabular"
                             }
                           >
                             {formatDate(loan.expected_return_time)}
                           </span>
                         </p>
                         {loan.checkout_time && (
-                          <p className="text-slate-500">
-                            Waktu Ambil: {formatDate(loan.checkout_time)}
+                          <p className="text-fg-subtle">
+                            Waktu Ambil: <span className="font-tabular">{formatDate(loan.checkout_time)}</span>
                           </p>
                         )}
                         {loan.actual_return_time && (
-                          <p className="text-slate-500">
-                            Waktu Kembali: {formatDate(loan.actual_return_time)}
+                          <p className="text-fg-subtle">
+                            Waktu Kembali: <span className="font-tabular">{formatDate(loan.actual_return_time)}</span>
                           </p>
                         )}
                         {loan.return_condition && (
                           <div className="flex items-center gap-1.5 pt-1">
-                            <span className="text-slate-500">
+                            <span className="text-fg-subtle">
                               Kondisi Pengembalian:
                             </span>
                             <ConditionBadge condition={loan.return_condition} />
@@ -317,13 +332,13 @@ export function MyLoansView() {
 
                     <div>
                       {loan.status === "pending_checkout" && (
-                        <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 max-w-xs">
+                        <div className="rounded-lg bg-status-reserved-bg border border-status-reserved-border p-3 text-xs text-status-reserved-fg max-w-xs">
                           Tunjukkan kode token yang diberikan admin untuk
                           mengambil unit fisik.
                         </div>
                       )}
                       {isOverdue && (
-                        <div className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 font-medium">
+                        <div className="rounded-lg bg-status-overdue-bg border border-status-overdue-border p-3 text-xs text-status-overdue-fg font-medium">
                           Peralatan sudah melewati batas waktu kembali. Segera
                           serahkan ke pengelola.
                         </div>

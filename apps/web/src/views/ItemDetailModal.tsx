@@ -46,19 +46,19 @@ export function ItemDetailModal({
         maxWidth="lg"
       >
         <div className="space-y-4">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-lg border border-border bg-surface-subtle p-3.5 space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">
               Deskripsi Peralatan
             </span>
-            <p className="mt-1 text-sm text-slate-700 whitespace-pre-line">
+            <p className="text-sm text-fg whitespace-pre-line leading-relaxed">
               {item.description || "Tidak ada deskripsi detail untuk peralatan ini."}
             </p>
           </div>
 
-          <div className="flex items-center gap-3 py-2 border-y border-slate-100">
-            <span className="text-xs text-slate-500">Status Peminjaman:</span>
+          <div className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-border bg-surface">
+            <span className="text-xs font-medium text-fg-muted">Status Peminjaman:</span>
             {item.is_lendable ? (
-              <Badge variant="emerald">Dapat Dipinjam</Badge>
+              <Badge variant="available">Dapat Dipinjam</Badge>
             ) : (
               <Badge variant="rose">Tidak Dapat Dipinjam</Badge>
             )}
@@ -68,29 +68,29 @@ export function ItemDetailModal({
           {isAdmin && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">
                   Daftar Unit Fisik ({units.length})
                 </span>
               </div>
               {isLoadingUnits ? (
                 <LoadingSpinner size="sm" />
               ) : units.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">
+                <p className="text-xs text-fg-subtle italic">
                   Belum ada unit fisik terdaftar untuk item ini.
                 </p>
               ) : (
-                <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 rounded-lg border border-slate-200">
+                <div className="max-h-48 overflow-y-auto divide-y divide-border rounded-lg border border-border">
                   {units.map((u) => (
                     <div
                       key={u.id}
-                      className="flex items-center justify-between p-2.5 text-xs bg-white"
+                      className="flex items-center justify-between p-2.5 text-xs bg-surface"
                     >
                       <div>
-                        <span className="font-mono font-medium text-slate-800">
+                        <span className="font-mono font-tabular font-medium text-fg">
                           {u.barcode}
                         </span>
                         {u.serial_number && (
-                          <span className="text-slate-400 ml-2">
+                          <span className="text-fg-subtle ml-2 font-mono font-tabular">
                             (SN: {u.serial_number})
                           </span>
                         )}
@@ -106,13 +106,15 @@ export function ItemDetailModal({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
-            <Button variant="ghost" onClick={onClose}>
+          <div className="flex justify-end gap-2 pt-4 border-t border-border">
+            <Button variant="ghost" size="md" className="min-h-[44px]" onClick={onClose}>
               Tutup
             </Button>
             {item.is_lendable && (
               <Button
                 variant="primary"
+                size="md"
+                className="min-h-[44px]"
                 onClick={() => {
                   setIsBookingOpen(true);
                 }}

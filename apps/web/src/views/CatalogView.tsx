@@ -79,19 +79,19 @@ export function CatalogView() {
       {/* Title & Filter Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-fg">
             Katalog Peralatan
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-fg-muted">
             Jelajahi dan ajukan peminjaman peralatan operasional organisasi{" "}
-            <span className="font-semibold text-slate-800">{activeOrg.name}</span>.
+            <span className="font-semibold text-fg">{activeOrg.name}</span>.
           </p>
         </div>
 
         {/* Search input */}
         <div className="w-full md:w-72">
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-fg-subtle">
               <svg
                 className="h-4 w-4"
                 fill="none"
@@ -111,7 +111,7 @@ export function CatalogView() {
               placeholder="Cari peralatan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="block w-full min-h-[44px] pl-10 pr-3 py-2 text-sm rounded-lg border border-border bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-border-strong"
             />
           </div>
         </div>
@@ -119,14 +119,14 @@ export function CatalogView() {
 
       {/* Category Pills Filter */}
       {!isLoadingCategories && categories.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setSelectedCategoryId("all")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
+            className={`min-h-[44px] rounded-full inline-flex items-center px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
               selectedCategoryId === "all"
-                ? "bg-slate-900 text-white"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-accent text-accent-fg"
+                : "bg-surface-subtle text-fg-muted hover:bg-surface-hover hover:text-fg border border-border"
             }`}
           >
             Semua ({items.length})
@@ -139,10 +139,10 @@ export function CatalogView() {
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
+                className={`min-h-[44px] rounded-full inline-flex items-center px-4 py-2 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   isSelected
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    ? "bg-accent text-accent-fg"
+                    : "bg-surface-subtle text-fg-muted hover:bg-surface-hover hover:text-fg border border-border"
                 }`}
               >
                 {cat.name} ({count})
@@ -176,17 +176,17 @@ export function CatalogView() {
             return (
               <div
                 key={item.id}
-                className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all"
+                className="group flex flex-col justify-between bg-surface border border-border rounded-xl p-5 hover:border-border-strong hover:bg-surface-hover/30 shadow-xs transition-all"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     {category && (
-                      <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                        <span className="text-xs font-medium text-fg-muted bg-surface-subtle border border-border px-2.5 py-0.5 rounded-md">
                         {category.name}
                       </span>
                     )}
                     {item.is_lendable ? (
-                      <Badge variant="emerald" size="sm">
+                      <Badge variant="available" size="sm">
                         Tersedia
                       </Badge>
                     ) : (
@@ -196,22 +196,23 @@ export function CatalogView() {
                     )}
                   </div>
 
-                  <h3 className="mt-3 text-base font-semibold text-slate-900 group-hover:text-slate-800">
+                  <h3 className="mt-3 text-base font-semibold text-fg">
                     {item.name}
                   </h3>
 
-                  <p className="mt-1.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                  <p className="mt-1.5 text-xs text-fg-muted line-clamp-2 leading-relaxed">
                     {item.description || "Tidak ada deskripsi detail."}
                   </p>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span className="text-[11px] text-slate-400">
+                <div className="mt-5 flex items-center justify-between pt-3 border-t border-border">
+                  <span className="text-[11px] font-mono text-fg-subtle">
                     ID: {item.id.slice(0, 8)}...
                   </span>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="md"
+                    className="min-h-[44px]"
                     onClick={() => setSelectedItem(item)}
                   >
                     {item.is_lendable ? "Ajukan Pinjam" : "Lihat Detail"}

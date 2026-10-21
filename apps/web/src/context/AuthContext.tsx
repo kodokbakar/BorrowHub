@@ -33,7 +33,8 @@ interface AuthContextValue {
 
 const ACTIVE_ORG_KEY = "borrowhub_active_org_id";
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
+export type { AuthContextValue };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
