@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS invitations;
+DROP TABLE IF EXISTS memberships;
+DROP TABLE IF EXISTS organizations;
+DROP TABLE IF EXISTS users;
+DROP EXTENSION IF EXISTS "citext";

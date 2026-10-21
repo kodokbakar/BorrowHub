@@ -8,16 +8,21 @@ import (
 )
 
 type Config struct {
-	Environment string
-	HTTPAddress string
+	Environment   string
+	HTTPAddress   string
+	DatabaseURL   string
+	JWTSecret     string
+	InternalToken string
 }
 
 func Load(defaultAddress string) (Config, error) {
 	cfg := Config{
-		Environment: value("APP_ENV", "local"),
-		HTTPAddress: value("HTTP_ADDR", defaultAddress),
+		Environment:   value("APP_ENV", "local"),
+		HTTPAddress:   value("HTTP_ADDR", defaultAddress),
+		DatabaseURL:   value("DATABASE_URL", "postgres://borrowhub_identity:borrowhub_identity@127.0.0.1:5432/borrowhub_identity?sslmode=disable"),
+		JWTSecret:     value("JWT_SECRET", "dev-secret-keep-at-least-32-bytes-long-for-hs256"),
+		InternalToken: value("INTERNAL_TOKEN", "dev-internal-token-secret"),
 	}
-
 	if !slices.Contains(
 		[]string{"local", "test", "staging", "production"},
 		cfg.Environment,

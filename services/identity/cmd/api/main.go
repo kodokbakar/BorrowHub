@@ -11,8 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"borrowhub/services/identity/internal/auth"
 	"borrowhub/services/identity/internal/config"
 	"borrowhub/services/identity/internal/httpapi"
+	"borrowhub/services/identity/internal/repository"
+	"borrowhub/services/identity/internal/service"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -43,68 +47,61 @@ func main() {
 		cfg.Environment,
 	)
 
+	poolCtx, poolCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	pool, err := pgxpool.New(poolCtx, cfg.DatabaseURL)
+	poolCancel()
+	if err != nil {
+		logger.Error(
+			"connect to database",
+			"error",
+			err,
+		)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	if err := repository.MigrateUp(cfg.DatabaseURL); err != nil {
+		logger.Error(
+			"run migrations",
+			"error",
+			err,
+		)
+		os.Exit(1)
+	}
+
 	var ready atomic.Bool
 
-	mux := http.NewServeMux()
+	readyCheck := func() bool {
+		if !ready.Load() {
+			return false
+		}
+		pingCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		return pool.Ping(pingCtx) == nil
+	}
 
-	mux.HandleFunc(
-		"GET /health/live",
-		func(w http.ResponseWriter, r *http.Request) {
-			httpapi.WriteJSON(
-				w,
-				r,
-				http.StatusOK,
-				map[string]string{
-					"status": "ok",
-				},
-			)
-		},
-	)
+	jwtMgr := auth.NewJWTManager(cfg.JWTSecret)
+	hasher := auth.DefaultPasswordHasher()
+	repos := repository.NewRepositories(pool)
 
-	mux.HandleFunc(
-		"GET /health/ready",
-		func(w http.ResponseWriter, r *http.Request) {
-			if !ready.Load() {
-				httpapi.WriteError(
-					w,
-					r,
-					http.StatusServiceUnavailable,
-					"SERVICE_NOT_READY",
-					"Service belum siap menerima request.",
-					nil,
-				)
-				return
-			}
+	authSvc := service.NewAuthService(repos.Users, repos.Organizations, repos.Sessions, hasher, jwtMgr)
+	orgSvc := service.NewOrgService(repos.Organizations, repos.Memberships)
+	memberSvc := service.NewMemberService(repos.Users, repos.Organizations, repos.Memberships, repos.Invitations)
 
-			httpapi.WriteJSON(
-				w,
-				r,
-				http.StatusOK,
-				map[string]string{
-					"status": "ok",
-				},
-			)
-		},
-	)
-
-	mux.HandleFunc(
-		"/",
-		func(w http.ResponseWriter, r *http.Request) {
-			httpapi.WriteError(
-				w,
-				r,
-				http.StatusNotFound,
-				"ROUTE_NOT_FOUND",
-				"Route tidak ditemukan.",
-				nil,
-			)
-		},
-	)
+	router := httpapi.NewRouter(httpapi.RouterDependencies{
+		AuthService:   authSvc,
+		OrgService:    orgSvc,
+		MemberService: memberSvc,
+		TokenManager:  jwtMgr,
+		ReadyCheck:    readyCheck,
+		IsSecure:      cfg.Environment != "local",
+		InternalToken: cfg.InternalToken,
+	})
 
 	server := &http.Server{
 		Addr: cfg.HTTPAddress,
 		Handler: httpapi.RequestIDs(
-			httpapi.Logging(logger)(mux),
+			httpapi.Logging(logger)(router),
 		),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

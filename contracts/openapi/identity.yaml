@@ -3,6 +3,7 @@ openapi: 3.1.0
 info:
   title: BorrowHub Identity Service API
   version: 0.1.0
+  description: Authentication and identity management service for BorrowHub.
 
 servers:
   - url: http://identity.borrowhub.localhost:8080
@@ -31,3 +32,949 @@ paths:
           $ref: "./common.yaml#/components/responses/HealthOK"
         "503":
           $ref: "./common.yaml#/components/responses/ServiceNotReady"
+
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      operationId: registerUser
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - display_name
+                - terms_accepted
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                terms_accepted:
+                  type: boolean
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid request or validation failure
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate with email and password
+      operationId: loginUser
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh access token using rotating refresh session
+      operationId: refreshSession
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: Session refreshed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthTokens"
+        "401":
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/auth/logout:
+    post:
+      summary: Revoke session and logout
+      operationId: logoutUser
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+
+  /api/v1/me:
+    get:
+      summary: Get current user profile and organizations
+      operationId: getCurrentUser
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+                          organizations:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/UserOrganization"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+    patch:
+      summary: Update current user profile or password
+      operationId: updateCurrentUser
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized or invalid current password
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/organizations:
+    post:
+      summary: Create a new organization
+      operationId: createOrganization
+      tags:
+        - Organizations
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - slug
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                slug:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                timezone:
+                  type: string
+                  default: UTC
+                visibility:
+                  type: string
+                  enum: [private, public]
+                  default: private
+                max_loan_duration_days:
+                  type: integer
+                  minimum: 1
+                  default: 14
+      responses:
+        "201":
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Organization"
+        "409":
+          description: Slug already in use
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+    get:
+      summary: List organizations for authenticated user
+      operationId: listOrganizations
+      tags:
+        - Organizations
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Organizations list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/UserOrganization"
+
+  /api/v1/organizations/{organizationId}:
+    get:
+      summary: Get organization details
+      operationId: getOrganization
+      tags:
+        - Organizations
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Organization profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Organization"
+        "403":
+          description: Forbidden (not a member)
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+    patch:
+      summary: Update organization settings
+      operationId: updateOrganization
+      tags:
+        - Organizations
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                timezone:
+                  type: string
+                visibility:
+                  type: string
+                  enum: [private, public]
+                max_loan_duration_days:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Organization updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Organization"
+        "403":
+          description: Forbidden (insufficient permissions)
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/organizations/{organizationId}/members:
+    get:
+      summary: List members in an organization
+      operationId: listOrganizationMembers
+      tags:
+        - Memberships
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Members list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/MembershipDetail"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/organizations/{organizationId}/invitations:
+    post:
+      summary: Invite member to organization
+      operationId: inviteOrganizationMember
+      tags:
+        - Memberships
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [admin, member]
+      responses:
+        "201":
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/InvitationResponse"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "409":
+          description: User is already a member
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/invitations/{token}/accept:
+    post:
+      summary: Accept invitation to join organization
+      operationId: acceptInvitation
+      tags:
+        - Memberships
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invitation accepted, membership created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Membership"
+        "403":
+          description: Invitation email does not match authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Invitation already accepted or user already member
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "410":
+          description: Invitation has expired
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/organizations/{organizationId}/members/{memberId}:
+    patch:
+      summary: Change member role
+      operationId: changeMemberRole
+      tags:
+        - Memberships
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [owner, admin, member]
+      responses:
+        "200":
+          description: Member role updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+        "403":
+          description: Forbidden or cannot demote sole owner
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+    delete:
+      summary: Remove member from organization
+      operationId: removeMember
+      tags:
+        - Memberships
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Member removed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+        "403":
+          description: Forbidden or cannot remove sole owner
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+  /api/v1/internal/organizations/{organizationId}/members/{userId}:
+    get:
+      summary: Internal check for user membership and role in organization
+      operationId: internalGetMemberRole
+      tags:
+        - Internal
+      security:
+        - internalTokenAuth: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Member status and role
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "./common.yaml#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/InternalMemberCheck"
+        "401":
+          description: Missing or invalid internal token
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+        "404":
+          description: User is not a member of organization
+          content:
+            application/json:
+              schema:
+                $ref: "./common.yaml#/components/schemas/ErrorEnvelope"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+    internalTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Internal-Token
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - display_name
+        - status
+        - terms_accepted_at
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended]
+        terms_accepted_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AuthTokens:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 900
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - tokens
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        tokens:
+          $ref: "#/components/schemas/AuthTokens"
+
+    Organization:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - timezone
+        - visibility
+        - max_loan_duration_days
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        timezone:
+          type: string
+        visibility:
+          type: string
+          enum: [private, public]
+        max_loan_duration_days:
+          type: integer
+        status:
+          type: string
+          enum: [active, suspended]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserOrganization:
+      allOf:
+        - $ref: "#/components/schemas/Organization"
+        - type: object
+          required:
+            - role
+          properties:
+            role:
+              type: string
+              enum: [owner, admin, member]
+
+    Membership:
+      type: object
+      required:
+        - id
+        - organization_id
+        - user_id
+        - role
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, admin, member]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MembershipDetail:
+      allOf:
+        - $ref: "#/components/schemas/Membership"
+        - type: object
+          required:
+            - email
+            - display_name
+          properties:
+            email:
+              type: string
+              format: email
+            display_name:
+              type: string
+
+    Invitation:
+      type: object
+      required:
+        - id
+        - organization_id
+        - email
+        - role
+        - status
+        - expires_at
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, member]
+        invited_by_user_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        status:
+          type: string
+          enum: [pending, accepted, revoked, expired]
+        expires_at:
+          type: string
+          format: date-time
+        accepted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InvitationResponse:
+      type: object
+      required:
+        - invitation
+        - token
+      properties:
+        invitation:
+          $ref: "#/components/schemas/Invitation"
+        token:
+          type: string
+
+    InternalMemberCheck:
+      type: object
+      required:
+        - is_member
+        - role
+        - organization_id
+        - user_id
+      properties:
+        is_member:
+          type: boolean
+        role:
+          type: string
+          enum: [owner, admin, member]
+        organization_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
