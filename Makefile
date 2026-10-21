@@ -98,9 +98,9 @@ contracts:
 		/spec/identity.yaml \
 		/spec/inventory.yaml \
 		/spec/lending.yaml
-	@python3 -m json.tool \
-		contracts/events/envelope.schema.json \
-		>/dev/null
+	@for schema in contracts/events/*.json; do \
+		python3 -m json.tool "$$schema" >/dev/null || exit 1; \
+	done
 
 compose-check:
 	@$(COMPOSE) config --quiet

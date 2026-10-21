@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://borrowhub.dev/contracts/events/loan.checked_out.schema.json",
+  "title": "BorrowHub Loan Checked Out Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "source",
+    "subject",
+    "organization_id",
+    "occurred_at",
+    "correlation_id",
+    "causation_id",
+    "data"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "const": "loan.checked_out"
+    },
+    "event_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "organization_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "causation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "loan_id",
+        "loan_request_id",
+        "unit_id",
+        "borrower_user_id",
+        "admin_user_id",
+        "checkout_time"
+      ],
+      "properties": {
+        "loan_id": {
+          "type": "string"
+        },
+        "loan_request_id": {
+          "type": "string"
+        },
+        "unit_id": {
+          "type": "string"
+        },
+        "borrower_user_id": {
+          "type": "string"
+        },
+        "admin_user_id": {
+          "type": "string"
+        },
+        "checkout_time": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://borrowhub.dev/contracts/events/loan.approved.schema.json",
+  "title": "BorrowHub Loan Approved Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "source",
+    "subject",
+    "organization_id",
+    "occurred_at",
+    "correlation_id",
+    "causation_id",
+    "data"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "const": "loan.approved"
+    },
+    "event_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "organization_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "causation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "loan_request_id",
+        "loan_id",
+        "reservation_id",
+        "unit_id",
+        "borrower_user_id",
+        "admin_user_id"
+      ],
+      "properties": {
+        "loan_request_id": {
+          "type": "string"
+        },
+        "loan_id": {
+          "type": "string"
+        },
+        "reservation_id": {
+          "type": "string"
+        },
+        "unit_id": {
+          "type": "string"
+        },
+        "borrower_user_id": {
+          "type": "string"
+        },
+        "admin_user_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
