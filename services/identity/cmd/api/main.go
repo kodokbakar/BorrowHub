@@ -96,8 +96,8 @@ func main() {
 		ReadyCheck:    readyCheck,
 		IsSecure:      cfg.Environment != "local",
 		InternalToken: cfg.InternalToken,
+		Logger:        logger,
 	})
-
 	server := &http.Server{
 		Addr: cfg.HTTPAddress,
 		Handler: httpapi.RequestIDs(
@@ -113,43 +113,42 @@ func main() {
 	)
 	defer stop()
 
+	serverErrCh := make(chan error, 1)
 	go func() {
-		<-ctx.Done()
-
-		ready.Store(false)
-
-		shutdownCtx, cancel := context.WithTimeout(
-			context.Background(),
-			10*time.Second,
+		logger.Info(
+			"server started",
+			"address",
+			cfg.HTTPAddress,
 		)
-		defer cancel()
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			logger.Error(
-				"shutdown server",
-				"error",
-				err,
-			)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrCh <- err
 		}
 	}()
 
 	ready.Store(true)
 
-	logger.Info(
-		"server started",
-		"address",
-		cfg.HTTPAddress,
-	)
+	select {
+	case <-ctx.Done():
+		logger.Info("shutdown signal received")
+	case err := <-serverErrCh:
+		logger.Error("server error", "error", err)
+	}
 
-	if err := server.ListenAndServe(); !errors.Is(
-		err,
-		http.ErrServerClosed,
-	) {
+	ready.Store(false)
+
+	shutdownCtx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error(
-			"server stopped",
+			"shutdown server",
 			"error",
 			err,
 		)
-		os.Exit(1)
 	}
+
+	logger.Info("server shutdown completed")
 }

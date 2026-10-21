@@ -34,7 +34,9 @@ GO_BINARIES := \
 	dev-identity \
 	dev-inventory \
 	dev-lending \
-	health
+	dev-notification \
+	health \
+	e2e
 
 help:
 	@echo "make bootstrap       Install dependency"
@@ -53,6 +55,7 @@ help:
 	@echo "make dev-identity    Jalankan Identity Service"
 	@echo "make dev-inventory   Jalankan Inventory Service"
 	@echo "make dev-lending     Jalankan Lending Service"
+	@echo "make dev-notification Jalankan Notification Worker"
 	@echo "make health          Periksa health semua service"
 	@echo "make structure       Tampilkan struktur repository"
 
@@ -151,6 +154,10 @@ dev-lending:
 	@APP_ENV=local HTTP_ADDR=:8083 \
 		go run ./services/lending/cmd/api
 
+dev-notification:
+	@APP_ENV=local HTTP_ADDR=:8084 \
+		go run ./workers/notification/cmd/worker
+
 health:
 	@curl --fail --silent --show-error \
 		http://identity.borrowhub.localhost:8080/health/live
@@ -170,3 +177,6 @@ health:
 	@curl --fail --silent --show-error \
 		http://lending.borrowhub.localhost:8080/health/ready
 	@echo
+
+e2e:
+	@bun run scripts/e2e/smoke.ts

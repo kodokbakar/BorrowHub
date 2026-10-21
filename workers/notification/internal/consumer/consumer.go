@@ -77,27 +77,22 @@ func (c *Consumer) IsReady() bool {
 
 // Start connects to RabbitMQ, sets up topology, and consumes messages until context is cancelled or Stop() is called.
 func (c *Consumer) Start(ctx context.Context) error {
-	c.mu.Lock()
 	if c.started.Load() {
-		c.mu.Unlock()
 		return errors.New("consumer already started")
 	}
 
 	if err := c.setup(); err != nil {
-		c.mu.Unlock()
 		return fmt.Errorf("setting up broker: %w", err)
 	}
 
 	msgs, err := c.consume()
 	if err != nil {
-		c.closeBrokerLocked()
-		c.mu.Unlock()
+		c.closeBroker()
 		return fmt.Errorf("starting consumer: %w", err)
 	}
 
 	c.started.Store(true)
 	c.ready.Store(true)
-	c.mu.Unlock()
 
 	c.logger.Info("notification consumer started", "queue", QueueEvents)
 

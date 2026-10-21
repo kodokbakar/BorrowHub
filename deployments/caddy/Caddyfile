@@ -10,7 +10,9 @@
 	}
 	handle @identity_api {
 		uri strip_prefix /api/identity
-		reverse_proxy 127.0.0.1:8081
+		reverse_proxy 127.0.0.1:8081 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@inventory_api {
@@ -19,7 +21,9 @@
 	}
 	handle @inventory_api {
 		uri strip_prefix /api/inventory
-		reverse_proxy 127.0.0.1:8082
+		reverse_proxy 127.0.0.1:8082 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@lending_api {
@@ -28,7 +32,9 @@
 	}
 	handle @lending_api {
 		uri strip_prefix /api/lending
-		reverse_proxy 127.0.0.1:8083
+		reverse_proxy 127.0.0.1:8083 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@notification_api {
@@ -37,44 +43,59 @@
 	}
 	handle @notification_api {
 		uri strip_prefix /api/notification
-		reverse_proxy 127.0.0.1:8084
+		reverse_proxy 127.0.0.1:8084 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@web host borrowhub.localhost
 	handle @web {
 		reverse_proxy 127.0.0.1:5173 {
 			header_up Host localhost:5173
+			header_up X-Real-IP {remote_host}
 		}
 	}
 
 	@identity host identity.borrowhub.localhost
 	handle @identity {
-		reverse_proxy 127.0.0.1:8081
+		reverse_proxy 127.0.0.1:8081 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@inventory host inventory.borrowhub.localhost
 	handle @inventory {
-		reverse_proxy 127.0.0.1:8082
+		reverse_proxy 127.0.0.1:8082 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@lending host lending.borrowhub.localhost
 	handle @lending {
-		reverse_proxy 127.0.0.1:8083
+		reverse_proxy 127.0.0.1:8083 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@notification host notification.borrowhub.localhost
 	handle @notification {
-		reverse_proxy 127.0.0.1:8084
+		reverse_proxy 127.0.0.1:8084 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@rabbitmq host rabbitmq.borrowhub.localhost
 	handle @rabbitmq {
-		reverse_proxy 127.0.0.1:15672
+		reverse_proxy 127.0.0.1:15672 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	@mailpit host mail.borrowhub.localhost
 	handle @mailpit {
-		reverse_proxy 127.0.0.1:8025
+		reverse_proxy 127.0.0.1:8025 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	respond "unknown local host" 404

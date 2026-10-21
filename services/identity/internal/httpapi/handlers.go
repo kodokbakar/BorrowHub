@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"borrowhub/services/identity/internal/auth"
 	"borrowhub/services/identity/internal/domain"
+	"borrowhub/services/identity/internal/observability"
 	"borrowhub/services/identity/internal/service"
 	"github.com/google/uuid"
 )
@@ -21,6 +23,8 @@ type RouterDependencies struct {
 	ReadyCheck    func() bool
 	IsSecure      bool
 	InternalToken string
+	RateLimiter   *RateLimiter
+	Logger        *slog.Logger
 }
 
 type handler struct {
@@ -31,16 +35,20 @@ func NewRouter(deps RouterDependencies) http.Handler {
 	h := &handler{deps: deps}
 	mux := http.NewServeMux()
 
+	rateLimiter := deps.RateLimiter
+	if rateLimiter == nil {
+		rateLimiter = NewRateLimiter(10, 10)
+	}
+
 	// Health
 	mux.HandleFunc("GET /health/live", h.handleHealthLive)
 	mux.HandleFunc("GET /health/ready", h.handleHealthReady)
 
-	// Public Auth
-	mux.HandleFunc("POST /api/v1/auth/register", h.handleRegister)
-	mux.HandleFunc("POST /api/v1/auth/login", h.handleLogin)
+	// Public Auth protected by rate limiter
+	mux.Handle("POST /api/v1/auth/register", rateLimiter.Middleware(http.HandlerFunc(h.handleRegister)))
+	mux.Handle("POST /api/v1/auth/login", rateLimiter.Middleware(http.HandlerFunc(h.handleLogin)))
 	mux.HandleFunc("POST /api/v1/auth/refresh", h.handleRefresh)
 	mux.HandleFunc("POST /api/v1/auth/logout", h.handleLogout)
-
 	// Internal downstream verification
 	mux.HandleFunc("GET /api/v1/internal/organizations/{organizationId}/members/{userId}", h.handleInternalGetMember)
 
@@ -103,18 +111,22 @@ func (h *handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := clientIP(r)
 	user, tokens, err := h.deps.AuthService.Register(r.Context(), service.RegisterInput{
 		Email:         req.Email,
 		Password:      req.Password,
 		DisplayName:   req.DisplayName,
 		TermsAccepted: req.TermsAccepted,
 		UserAgent:     r.UserAgent(),
-		IPAddress:     r.RemoteAddr,
+		IPAddress:     ip,
 	})
 	if err != nil {
+		observability.LogAudit(r.Context(), h.deps.Logger, "auth.register_failed", "email", req.Email, "ip", ip, "error", err.Error())
 		HandleError(w, r, err)
 		return
 	}
+
+	observability.LogAudit(r.Context(), h.deps.Logger, "auth.register_success", "user_id", user.ID.String(), "email", user.Email, "ip", ip)
 
 	SetAuthCookies(w, tokens.AccessToken, tokens.RefreshToken, h.deps.IsSecure)
 
@@ -136,16 +148,20 @@ func (h *handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := clientIP(r)
 	user, tokens, err := h.deps.AuthService.Login(r.Context(), service.LoginInput{
 		Email:     req.Email,
 		Password:  req.Password,
 		UserAgent: r.UserAgent(),
-		IPAddress: r.RemoteAddr,
+		IPAddress: ip,
 	})
 	if err != nil {
+		observability.LogAudit(r.Context(), h.deps.Logger, "auth.login_failed", "email", req.Email, "ip", ip, "error", err.Error())
 		HandleError(w, r, err)
 		return
 	}
+
+	observability.LogAudit(r.Context(), h.deps.Logger, "auth.login_success", "user_id", user.ID.String(), "email", user.Email, "ip", ip)
 
 	SetAuthCookies(w, tokens.AccessToken, tokens.RefreshToken, h.deps.IsSecure)
 
@@ -174,7 +190,7 @@ func (h *handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := h.deps.AuthService.Refresh(r.Context(), rawToken, r.UserAgent(), r.RemoteAddr)
+	tokens, err := h.deps.AuthService.Refresh(r.Context(), rawToken, r.UserAgent(), clientIP(r))
 	if err != nil {
 		HandleError(w, r, err)
 		return
@@ -494,6 +510,13 @@ func (h *handler) handleChangeMemberRole(w http.ResponseWriter, r *http.Request)
 		HandleError(w, r, err)
 		return
 	}
+
+	observability.LogAudit(r.Context(), h.deps.Logger, "member.role_changed",
+		"organization_id", orgID.String(),
+		"actor_user_id", userID.String(),
+		"target_member_id", memberID.String(),
+		"new_role", req.Role,
+	)
 
 	WriteJSON(w, r, http.StatusOK, map[string]string{
 		"message": "role updated successfully",

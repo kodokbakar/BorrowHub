@@ -1,0 +1,44 @@
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	@identity_api path /api/identity/*
+	handle @identity_api {
+		uri strip_prefix /api/identity
+		reverse_proxy identity:8081 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	@inventory_api path /api/inventory/*
+	handle @inventory_api {
+		uri strip_prefix /api/inventory
+		reverse_proxy inventory:8082 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	@lending_api path /api/lending/*
+	handle @lending_api {
+		uri strip_prefix /api/lending
+		reverse_proxy lending:8083 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	@notification_api path /api/notification/*
+	handle @notification_api {
+		uri strip_prefix /api/notification
+		reverse_proxy notification:8084 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	handle {
+		reverse_proxy web:8080 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+}

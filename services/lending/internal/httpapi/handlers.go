@@ -2,22 +2,28 @@ package httpapi
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
 
 	"borrowhub/services/lending/internal/auth"
 	"borrowhub/services/lending/internal/domain"
+	"borrowhub/services/lending/internal/observability"
 	"borrowhub/services/lending/internal/service"
 	"github.com/google/uuid"
 )
 
 type Handlers struct {
 	lendingService *service.LendingService
+	logger         *slog.Logger
 }
 
-func NewHandlers(lendingService *service.LendingService) *Handlers {
-	return &Handlers{lendingService: lendingService}
+func NewHandlers(lendingService *service.LendingService, logger *slog.Logger) *Handlers {
+	return &Handlers{
+		lendingService: lendingService,
+		logger:         logger,
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -282,6 +288,12 @@ func (h *Handlers) ApproveLoanRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	observability.LogAudit(r.Context(), h.logger, "loan.approved",
+		"organization_id", rawReq.OrganizationID.String(),
+		"reviewer_user_id", userID.String(),
+		"loan_request_id", reqID.String(),
+	)
+
 	WriteJSON(w, r, http.StatusOK, result)
 }
 
@@ -328,6 +340,12 @@ func (h *Handlers) RejectLoanRequest(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
+
+	observability.LogAudit(r.Context(), h.logger, "loan.rejected",
+		"organization_id", rawReq.OrganizationID.String(),
+		"reviewer_user_id", userID.String(),
+		"loan_request_id", reqID.String(),
+	)
 
 	WriteJSON(w, r, http.StatusOK, result)
 }
@@ -535,6 +553,12 @@ func (h *Handlers) CheckoutLoan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	observability.LogAudit(r.Context(), h.logger, "loan.checkout",
+		"organization_id", rawLoan.OrganizationID.String(),
+		"processor_user_id", userID.String(),
+		"loan_id", loanID.String(),
+	)
+
 	WriteJSON(w, r, http.StatusOK, loan)
 }
 
@@ -594,6 +618,12 @@ func (h *Handlers) ReturnLoan(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, r, err)
 		return
 	}
+
+	observability.LogAudit(r.Context(), h.logger, "loan.returned",
+		"organization_id", rawLoan.OrganizationID.String(),
+		"processor_user_id", userID.String(),
+		"loan_id", loanID.String(),
+	)
 
 	WriteJSON(w, r, http.StatusOK, loan)
 }

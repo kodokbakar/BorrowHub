@@ -10,6 +10,7 @@
   "scripts": {
     "dev:web": "bun run --filter @borrowhub/web dev",
     "build:web": "bun run --filter @borrowhub/web build",
-    "typecheck:web": "bun run --filter @borrowhub/web typecheck"
+    "typecheck:web": "bun run --filter @borrowhub/web typecheck",
+    "test:e2e": "bun run scripts/e2e/smoke.ts"
   }
 }

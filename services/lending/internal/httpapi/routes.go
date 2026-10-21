@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"log/slog"
 	"net/http"
 
 	"borrowhub/services/lending/internal/auth"
@@ -13,10 +14,11 @@ type RouterDependencies struct {
 	TokenManager   *auth.JWTManager
 	ReadyCheck     func() bool
 	InternalToken  string
+	Logger         *slog.Logger
 }
 
 func NewRouter(deps RouterDependencies) http.Handler {
-	handlers := NewHandlers(deps.LendingService)
+	handlers := NewHandlers(deps.LendingService, deps.Logger)
 	mux := http.NewServeMux()
 
 	// Health checks

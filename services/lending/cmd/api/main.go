@@ -107,6 +107,7 @@ func main() {
 		TokenManager:   jwtMgr,
 		ReadyCheck:     readyCheck,
 		InternalToken:  cfg.InternalToken,
+		Logger:         logger,
 	})
 
 	handler := httpapi.RequestIDs(httpapi.Logging(logger)(router))
@@ -120,45 +121,44 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
+	serverErrCh := make(chan error, 1)
 	go func() {
-		<-ctx.Done()
-
-		shutdownCtx, cancel := context.WithTimeout(
-			context.Background(),
-			10*time.Second,
+		logger.Info(
+			"server started",
+			"address",
+			cfg.HTTPAddress,
 		)
-		defer cancel()
-
-		ready.Store(false)
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			logger.Error(
-				"server shutdown",
-				"error",
-				err,
-			)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrCh <- err
 		}
-
-		outboxPublisher.Stop()
 	}()
 
 	ready.Store(true)
 
-	logger.Info(
-		"server started",
-		"address",
-		cfg.HTTPAddress,
-	)
+	select {
+	case <-ctx.Done():
+		logger.Info("shutdown signal received")
+	case err := <-serverErrCh:
+		logger.Error("server error", "error", err)
+	}
 
-	if err := server.ListenAndServe(); !errors.Is(
-		err,
-		http.ErrServerClosed,
-	) {
+	ready.Store(false)
+
+	shutdownCtx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error(
-			"server error",
+			"server shutdown",
 			"error",
 			err,
 		)
-		os.Exit(1)
 	}
+
+	outboxPublisher.Stop()
+
+	logger.Info("server shutdown completed")
 }
