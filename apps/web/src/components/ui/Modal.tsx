@@ -5,7 +5,7 @@ export interface ModalProps {
   onClose: () => void;
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
@@ -46,30 +46,33 @@ export function Modal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
+      aria-describedby={description ? "modal-description" : undefined}
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-fg/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Dialog box */}
       <div
-        className={`relative w-full ${widthClass} rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-900/5 transition-all z-10`}
+        className={`relative w-full ${widthClass} rounded-2xl bg-surface text-fg border border-border p-6 shadow-xl transition-all z-10`}
       >
-        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-start justify-between pb-3 border-b border-border">
           <div>
-            <h2 id="modal-title" className="text-lg font-semibold text-slate-900">
+            <h2 id="modal-title" className="text-lg font-semibold text-fg">
               {title}
             </h2>
             {description && (
-              <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+              <p id="modal-description" className="mt-0.5 text-xs text-fg-muted">
+                {description}
+              </p>
             )}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-fg-muted hover:bg-surface-hover hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
             aria-label="Close dialog"
           >
             <svg

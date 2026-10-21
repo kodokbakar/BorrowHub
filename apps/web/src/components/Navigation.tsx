@@ -1,14 +1,25 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 
-interface NavigationProps {
+export interface NavigationProps {
   currentTab: string;
   onTabChange: (tab: string) => void;
+  isAdmin?: boolean;
 }
 
-export function Navigation({ currentTab, onTabChange }: NavigationProps) {
-  const { isAdmin } = useAuth();
-
+export function Navigation({
+  currentTab,
+  onTabChange,
+  isAdmin: propIsAdmin,
+}: NavigationProps) {
+  let contextIsAdmin = false;
+  try {
+    const auth = useAuth();
+    contextIsAdmin = auth.isAdmin;
+  } catch {
+    // Allows rendering outside AuthProvider in unit tests or isolated previews
+  }
+  const isAdmin = propIsAdmin ?? contextIsAdmin;
   const tabs = [
     { id: "catalog", label: "Katalog Peralatan" },
     { id: "my-loans", label: "Peminjaman Saya" },
@@ -22,20 +33,29 @@ export function Navigation({ currentTab, onTabChange }: NavigationProps) {
   ];
 
   return (
-    <nav className="border-b border-slate-200 bg-white">
+    <nav className="border-b border-border bg-surface text-fg" aria-label="Navigasi Utama">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-2 sm:gap-6 overflow-x-auto py-2 -mb-px">
+        <div
+          role="tablist"
+          aria-orientation="horizontal"
+          className="flex gap-2 sm:gap-4 overflow-x-auto py-2 -mb-px"
+        >
           {tabs.map((tab) => {
             const isActive = currentTab === tab.id;
             return (
               <button
                 key={tab.id}
+                id={`tab-${tab.id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
+                tabIndex={0}
                 type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`whitespace-nowrap px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
+                className={`min-h-[44px] inline-flex items-center whitespace-nowrap px-3.5 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   isActive
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    ? "bg-accent text-accent-fg font-semibold shadow-xs"
+                    : "text-fg-muted hover:text-fg hover:bg-surface-hover"
                 }`}
               >
                 {tab.label}

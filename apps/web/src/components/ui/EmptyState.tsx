@@ -17,8 +17,8 @@ export function EmptyState({
   icon,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-12 text-center bg-white/50">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-strong p-12 text-center bg-surface">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-surface-hover text-fg-muted">
         {icon || (
           <svg
             className="h-6 w-6"
@@ -35,8 +35,8 @@ export function EmptyState({
           </svg>
         )}
       </div>
-      <h3 className="mt-4 text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>
+      <h3 className="mt-4 text-sm font-semibold text-fg">{title}</h3>
+      <p className="mt-1 max-w-sm text-sm text-fg-muted">{description}</p>
       {actionLabel && onAction && (
         <div className="mt-6">
           <Button variant="outline" size="sm" onClick={onAction}>
