@@ -299,6 +299,7 @@ export function AdminLendingView() {
       setIsSubmittingReturn(false);
     }
   };
+
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleString("id-ID", {
@@ -317,12 +318,13 @@ export function AdminLendingView() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-fg">
           Alur Peminjaman Admin
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-fg-muted">
           Tinjau permohonan pinjam, validasi token check-out fisik, inspeksi
-          kondisi pengembalian, dan pantau keterlambatan.
+          kondisi pengembalian, dan pantau keterlambatan untuk{" "}
+          <span className="font-semibold text-fg">{activeOrg.name}</span>.
         </p>
       </div>
 
@@ -335,48 +337,68 @@ export function AdminLendingView() {
         />
       )}
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      {/* Subtabs with accessibility */}
+      <div
+        className="flex border-b border-border overflow-x-auto"
+        role="tablist"
+        aria-label="Alur Peminjaman"
+      >
         <button
           type="button"
+          role="tab"
+          id="tab-pending"
+          aria-controls="panel-pending"
+          aria-selected={activeTab === "pending"}
           onClick={() => setActiveTab("pending")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] whitespace-nowrap inline-flex items-center py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === "pending"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-bold"
+              : "border-transparent text-fg-muted hover:text-fg"
           }`}
         >
           Menunggu Persetujuan ({pendingRequests.length})
         </button>
         <button
           type="button"
+          role="tab"
+          id="tab-checkout"
+          aria-controls="panel-checkout"
+          aria-selected={activeTab === "checkout"}
           onClick={() => setActiveTab("checkout")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] whitespace-nowrap inline-flex items-center py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === "checkout"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-bold"
+              : "border-transparent text-fg-muted hover:text-fg"
           }`}
         >
-          Check-Out / Penyerahan ({pendingCheckoutLoans.length})
+          Meja Check-out ({pendingCheckoutLoans.length})
         </button>
         <button
           type="button"
+          role="tab"
+          id="tab-active"
+          aria-controls="panel-active"
+          aria-selected={activeTab === "active"}
           onClick={() => setActiveTab("active")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] whitespace-nowrap inline-flex items-center py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === "active"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-bold"
+              : "border-transparent text-fg-muted hover:text-fg"
           }`}
         >
-          Sedang Dipinjam & Kembali ({checkedOutLoans.length})
+          Pinjaman Aktif & Selesai ({checkedOutLoans.length})
         </button>
         <button
           type="button"
+          role="tab"
+          id="tab-overdue"
+          aria-controls="panel-overdue"
+          aria-selected={activeTab === "overdue"}
           onClick={() => setActiveTab("overdue")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] whitespace-nowrap inline-flex items-center py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === "overdue"
-              ? "border-rose-600 text-rose-600"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-status-overdue text-status-overdue font-bold"
+              : "border-transparent text-status-overdue/80 hover:text-status-overdue"
           }`}
         >
           Terlambat ({overdueLoans.length})
@@ -385,7 +407,7 @@ export function AdminLendingView() {
 
       {/* PENDING APPROVAL TAB */}
       {activeTab === "pending" && (
-        <div>
+        <div id="panel-pending" role="tabpanel" aria-labelledby="tab-pending">
           {isLoadingPending ? (
             <LoadingSpinner />
           ) : pendingRequests.length === 0 ? (
@@ -401,31 +423,35 @@ export function AdminLendingView() {
                 return (
                   <div
                     key={req.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5 shadow-xs"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-slate-900">
+                        <h3 className="font-semibold text-fg">
                           {item?.name || `Item: ${req.item_id.slice(0, 8)}`}
                         </h3>
                         <RequestStatusBadge status={req.status} />
                       </div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-fg-muted">
                         Peminjam ID:{" "}
-                        <span className="font-mono">
+                        <span className="font-mono font-tabular text-fg">
                           {req.requester_user_id.slice(0, 8)}...
                         </span>{" "}
-                        | Jumlah: {req.quantity} unit
+                        | Jumlah:{" "}
+                        <span className="font-tabular font-medium text-fg">
+                          {req.quantity}
+                        </span>{" "}
+                        unit
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-fg-muted font-tabular">
                         Jadwal: {formatDate(req.start_time)} s/d{" "}
                         {formatDate(req.end_time)}
                       </p>
-                      <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded-md">
+                      <p className="text-xs text-fg bg-surface-subtle border border-border-subtle p-2.5 rounded-md">
                         <strong>Tujuan:</strong> {req.purpose}
                       </p>
                       {req.notes && (
-                        <p className="text-xs text-slate-500 italic">
+                        <p className="text-xs text-fg-subtle italic">
                           Catatan: {req.notes}
                         </p>
                       )}
@@ -434,7 +460,7 @@ export function AdminLendingView() {
                     <div className="flex items-center gap-2 shrink-0">
                       <Button
                         variant="danger"
-                        size="sm"
+                        className="min-h-[44px]"
                         onClick={() => {
                           setRejectingRequest(req);
                           setRejectNotes("");
@@ -444,7 +470,7 @@ export function AdminLendingView() {
                       </Button>
                       <Button
                         variant="primary"
-                        size="sm"
+                        className="min-h-[44px]"
                         onClick={() => handleApprove(req.id)}
                         isLoading={isApproving}
                       >
@@ -461,7 +487,7 @@ export function AdminLendingView() {
 
       {/* CHECK-OUT TAB */}
       {activeTab === "checkout" && (
-        <div>
+        <div id="panel-checkout" role="tabpanel" aria-labelledby="tab-checkout">
           {isLoadingLoans ? (
             <LoadingSpinner />
           ) : pendingCheckoutLoans.length === 0 ? (
@@ -474,23 +500,26 @@ export function AdminLendingView() {
               {pendingCheckoutLoans.map((loan) => (
                 <div
                   key={loan.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5 shadow-xs"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-slate-900">
+                      <h3 className="font-semibold text-fg">
                         Pinjaman #{loan.id.slice(0, 8)}
                       </h3>
                       <LoanStatusBadge status={loan.status} />
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-fg-muted">
                       Unit ID:{" "}
-                      <span className="font-mono text-slate-700 font-semibold">
+                      <span className="font-mono font-tabular text-fg font-semibold">
                         {loan.unit_id.slice(0, 8)}...
                       </span>{" "}
-                      | Peminjam ID: {loan.borrower_user_id.slice(0, 8)}...
+                      | Peminjam ID:{" "}
+                      <span className="font-mono font-tabular text-fg">
+                        {loan.borrower_user_id.slice(0, 8)}...
+                      </span>
                     </p>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-fg-muted font-tabular">
                       Rencana Kembali: {formatDate(loan.expected_return_time)}
                     </p>
                   </div>
@@ -498,7 +527,7 @@ export function AdminLendingView() {
                   <div>
                     <Button
                       variant="primary"
-                      size="sm"
+                      className="min-h-[44px]"
                       onClick={() => {
                         setCheckoutModalLoan(loan);
                         setCheckoutTokenInput("");
@@ -516,7 +545,7 @@ export function AdminLendingView() {
 
       {/* ACTIVE & RETURN TAB */}
       {activeTab === "active" && (
-        <div>
+        <div id="panel-active" role="tabpanel" aria-labelledby="tab-active">
           {isLoadingLoans ? (
             <LoadingSpinner />
           ) : checkedOutLoans.length === 0 ? (
@@ -531,38 +560,43 @@ export function AdminLendingView() {
                 return (
                   <div
                     key={loan.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-5 shadow-xs bg-white ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-5 shadow-xs bg-surface ${
                       isOverdue
-                        ? "border-rose-300 ring-1 ring-rose-200"
-                        : "border-slate-200"
+                        ? "border-status-overdue-border bg-status-overdue-bg/20 ring-1 ring-status-overdue-border"
+                        : "border-border"
                     }`}
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-slate-900">
+                        <h3 className="font-semibold text-fg">
                           Pinjaman #{loan.id.slice(0, 8)}
                         </h3>
                         <LoanStatusBadge status={loan.status} />
                       </div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-fg-muted">
                         Unit ID:{" "}
-                        <span className="font-mono text-slate-700">
+                        <span className="font-mono font-tabular text-fg">
                           {loan.unit_id.slice(0, 8)}...
                         </span>{" "}
-                        | Peminjam ID: {loan.borrower_user_id.slice(0, 8)}...
+                        | Peminjam ID:{" "}
+                        <span className="font-mono font-tabular text-fg">
+                          {loan.borrower_user_id.slice(0, 8)}...
+                        </span>
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-fg-muted font-tabular">
                         Batas Pengembalian:{" "}
                         <strong
                           className={
-                            isOverdue ? "text-rose-600" : "text-slate-800"
+                            isOverdue
+                              ? "text-status-overdue font-bold"
+                              : "text-fg"
                           }
                         >
                           {formatDate(loan.expected_return_time)}
                         </strong>
                       </p>
                       {loan.checkout_time && (
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-fg-subtle font-tabular">
                           Check-out pada: {formatDate(loan.checkout_time)}
                         </p>
                       )}
@@ -571,7 +605,7 @@ export function AdminLendingView() {
                     <div>
                       <Button
                         variant="outline"
-                        size="sm"
+                        className="min-h-[44px]"
                         onClick={() => {
                           setReturnModalLoan(loan);
                           setReturnCondition("good");
@@ -591,7 +625,7 @@ export function AdminLendingView() {
 
       {/* OVERDUE TAB */}
       {activeTab === "overdue" && (
-        <div>
+        <div id="panel-overdue" role="tabpanel" aria-labelledby="tab-overdue">
           {isLoadingOverdue ? (
             <LoadingSpinner />
           ) : overdueLoans.length === 0 ? (
@@ -604,31 +638,37 @@ export function AdminLendingView() {
               {overdueLoans.map((loan) => (
                 <div
                   key={loan.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-rose-300 bg-rose-50/30 p-5 shadow-xs"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-status-overdue-border bg-status-overdue-bg/20 ring-1 ring-status-overdue-border p-5 shadow-xs"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-slate-900">
+                      <h3 className="font-semibold text-fg">
                         Pinjaman #{loan.id.slice(0, 8)}
                       </h3>
                       <LoanStatusBadge status="overdue" />
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-fg-muted">
                       Unit ID:{" "}
-                      <span className="font-mono text-slate-800 font-semibold">
+                      <span className="font-mono font-tabular text-fg font-semibold">
                         {loan.unit_id.slice(0, 8)}...
                       </span>{" "}
-                      | Peminjam ID: {loan.borrower_user_id.slice(0, 8)}...
+                      | Peminjam ID:{" "}
+                      <span className="font-mono font-tabular text-fg">
+                        {loan.borrower_user_id.slice(0, 8)}...
+                      </span>
                     </p>
-                    <p className="text-xs text-rose-700 font-medium">
-                      Jatuh Tempo: {formatDate(loan.expected_return_time)}
+                    <p className="text-xs text-status-overdue-fg font-bold">
+                      Jatuh Tempo:{" "}
+                      <span className="font-tabular">
+                        {formatDate(loan.expected_return_time)}
+                      </span>
                     </p>
                   </div>
 
                   <div>
                     <Button
                       variant="danger"
-                      size="sm"
+                      className="min-h-[44px]"
                       onClick={() => {
                         setReturnModalLoan(loan);
                         setReturnCondition("good");
@@ -645,7 +685,7 @@ export function AdminLendingView() {
         </div>
       )}
 
-      {/* MODAL: Approved Request Result (Displays Checkout Token) */}
+      {/* MODAL: Approved Request Result (Displays Monospace Checkout Token) */}
       <Modal
         isOpen={!!approvalResult}
         onClose={() => setApprovalResult(null)}
@@ -653,37 +693,45 @@ export function AdminLendingView() {
         description="Berikan kode token sekali-pakai ini kepada peminjam saat mengambil barang."
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
-            <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-semibold text-status-available uppercase tracking-wider">
               Token Pengambilan (Check-out)
             </span>
-            <div className="mt-2 font-mono text-2xl font-bold tracking-wider text-slate-900 bg-white py-2 px-4 rounded-lg border border-emerald-300 select-all">
+            <div className="font-mono font-bold text-2xl tracking-widest bg-surface-subtle p-4 border border-border rounded-xl select-all text-accent">
               {approvalResult?.checkout_token}
             </div>
-            <p className="mt-2 text-xs text-emerald-700">
+            <p className="text-xs text-fg-muted">
               Token ini hanya dapat digunakan satu kali dan akan divalidasi saat
               penyerahan unit fisik.
             </p>
           </div>
 
-          <div className="text-xs text-slate-600 space-y-1">
+          <div className="text-xs text-fg-muted space-y-1 bg-surface-subtle border border-border-subtle p-3 rounded-lg">
             <p>
-              <strong>Pinjaman ID:</strong> {approvalResult?.loan.id}
+              <strong className="text-fg">Pinjaman ID:</strong>{" "}
+              <span className="font-mono font-tabular">
+                {approvalResult?.loan.id}
+              </span>
             </p>
             <p>
-              <strong>Unit Fisik Terpilih:</strong>{" "}
-              {approvalResult?.loan.unit_id}
+              <strong className="text-fg">Unit Fisik Terpilih:</strong>{" "}
+              <span className="font-mono font-tabular">
+                {approvalResult?.loan.unit_id}
+              </span>
             </p>
             <p>
-              <strong>Batas Kembali:</strong>{" "}
-              {approvalResult &&
-                formatDate(approvalResult.loan.expected_return_time)}
+              <strong className="text-fg">Batas Kembali:</strong>{" "}
+              <span className="font-tabular">
+                {approvalResult &&
+                  formatDate(approvalResult.loan.expected_return_time)}
+              </span>
             </p>
           </div>
 
-          <div className="flex justify-end pt-2 border-t border-slate-100">
+          <div className="flex justify-end pt-2 border-t border-border-subtle">
             <Button
               variant="primary"
+              className="min-h-[44px]"
               onClick={() => setApprovalResult(null)}
             >
               Selesai & Tutup
@@ -706,10 +754,11 @@ export function AdminLendingView() {
             onChange={(e) => setRejectNotes(e.target.value)}
             required
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setRejectingRequest(null)}
             >
               Batal
@@ -717,6 +766,7 @@ export function AdminLendingView() {
             <Button
               type="submit"
               variant="danger"
+              className="min-h-[44px]"
               isLoading={isSubmittingReject}
             >
               Tolak Permohonan
@@ -725,7 +775,7 @@ export function AdminLendingView() {
         </form>
       </Modal>
 
-      {/* MODAL: Checkout / Serah Terima */}
+      {/* MODAL: Checkout / Serah Terima Station */}
       <Modal
         isOpen={!!checkoutModalLoan}
         onClose={() => setCheckoutModalLoan(null)}
@@ -738,13 +788,14 @@ export function AdminLendingView() {
             placeholder="Masukkan token dari peminjam"
             value={checkoutTokenInput}
             onChange={(e) => setCheckoutTokenInput(e.target.value)}
-            className="font-mono text-base"
+            className="font-mono font-tabular text-lg tracking-wider"
             required
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setCheckoutModalLoan(null)}
             >
               Batal
@@ -752,6 +803,7 @@ export function AdminLendingView() {
             <Button
               type="submit"
               variant="primary"
+              className="min-h-[44px]"
               isLoading={isSubmittingCheckout}
             >
               Konfirmasi Serah Terima
@@ -760,7 +812,7 @@ export function AdminLendingView() {
         </form>
       </Modal>
 
-      {/* MODAL: Return / Pengembalian */}
+      {/* MODAL: Return / Pengembalian Inspection Station */}
       <Modal
         isOpen={!!returnModalLoan}
         onClose={() => setReturnModalLoan(null)}
@@ -783,21 +835,22 @@ export function AdminLendingView() {
             ]}
           />
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Catatan Pengembalian (Opsional)
             </label>
             <textarea
               rows={2}
-              className="block w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="block w-full rounded-lg border border-border-strong bg-surface p-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
               placeholder="Catatan kebersihan, kelengkapan kabel, baut, dll"
               value={returnNotes}
               onChange={(e) => setReturnNotes(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setReturnModalLoan(null)}
             >
               Batal
@@ -805,6 +858,7 @@ export function AdminLendingView() {
             <Button
               type="submit"
               variant="primary"
+              className="min-h-[44px]"
               isLoading={isSubmittingReturn}
             >
               Catat Pengembalian Selesai

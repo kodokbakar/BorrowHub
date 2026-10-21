@@ -59,6 +59,7 @@ export function AdminInventoryView() {
       setFeedback({ type: "error", message: fallback });
     }
   };
+
   // Categories query
   const {
     data: categories = [],
@@ -354,29 +355,34 @@ export function AdminInventoryView() {
       setIsSubmittingCondition(false);
     }
   };
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-fg">
             Admin Inventaris & Peralatan
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-fg-muted">
             Kelola kategori, master peralatan, dan unit fisik barcode untuk{" "}
-            <span className="font-semibold text-slate-800">{activeOrg.name}</span>.
+            <span className="font-semibold text-fg">{activeOrg.name}</span>.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {activeTab === "categories" ? (
-            <Button variant="primary" size="sm" onClick={handleOpenCreateCategory}>
+            <Button
+              variant="primary"
+              className="min-h-[44px]"
+              onClick={handleOpenCreateCategory}
+            >
               + Kategori Baru
             </Button>
           ) : (
             <Button
               variant="primary"
-              size="sm"
+              className="min-h-[44px]"
               onClick={handleOpenCreateItem}
               disabled={categories.length === 0}
             >
@@ -395,35 +401,51 @@ export function AdminInventoryView() {
         />
       )}
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      {/* Subtabs with accessibility */}
+      <div
+        className="flex border-b border-border"
+        role="tablist"
+        aria-label="Manajemen Inventaris"
+      >
         <button
           type="button"
+          role="tab"
+          id="tab-items"
+          aria-controls="panel-items"
+          aria-selected={activeTab === "items"}
           onClick={() => setActiveTab("items")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] inline-flex items-center py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === "items"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-bold"
+              : "border-transparent text-fg-muted hover:text-fg"
           }`}
         >
           Master Peralatan & Unit ({items.length})
         </button>
         <button
           type="button"
+          role="tab"
+          id="tab-categories"
+          aria-controls="panel-categories"
+          aria-selected={activeTab === "categories"}
           onClick={() => setActiveTab("categories")}
-          className={`py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+          className={`min-h-[44px] inline-flex items-center py-3 px-4 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
             activeTab === "categories"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-accent text-accent font-bold"
+              : "border-transparent text-fg-muted hover:text-fg"
           }`}
         >
           Kategori ({categories.length})
         </button>
       </div>
 
-      {/* CATEGORIES TAB */}
+      {/* CATEGORIES TAB PANEL */}
       {activeTab === "categories" && (
-        <div>
+        <div
+          id="panel-categories"
+          role="tabpanel"
+          aria-labelledby="tab-categories"
+        >
           {isLoadingCats ? (
             <LoadingSpinner />
           ) : categories.length === 0 ? (
@@ -434,9 +456,9 @@ export function AdminInventoryView() {
               onAction={handleOpenCreateCategory}
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-semibold text-slate-600">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+              <table className="min-w-full divide-y divide-border text-left text-sm">
+                <thead className="bg-surface-subtle text-xs font-semibold text-fg-muted">
                   <tr>
                     <th className="py-3 px-4">Nama Kategori</th>
                     <th className="py-3 px-4">Slug</th>
@@ -444,30 +466,32 @@ export function AdminInventoryView() {
                     <th className="py-3 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border-subtle">
                   {categories.map((cat) => (
-                    <tr key={cat.id} className="hover:bg-slate-50/70">
-                      <td className="py-3 px-4 font-medium text-slate-900">
+                    <tr
+                      key={cat.id}
+                      className="hover:bg-surface-hover/70 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-medium text-fg">
                         {cat.name}
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs text-slate-500">
+                      <td className="py-3 px-4 font-mono font-tabular text-xs text-fg-muted">
                         {cat.slug}
                       </td>
-                      <td className="py-3 px-4 text-slate-600 text-xs max-w-xs truncate">
+                      <td className="py-3 px-4 text-fg-muted text-xs max-w-xs truncate">
                         {cat.description || "-"}
                       </td>
                       <td className="py-3 px-4 text-right space-x-2">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          className="min-h-[44px]"
                           onClick={() => handleOpenEditCategory(cat)}
                         >
                           Ubah
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          className="min-h-[44px] text-status-overdue hover:text-status-overdue hover:bg-status-overdue-bg"
                           onClick={() => handleDeleteCategory(cat.id)}
                         >
                           Hapus
@@ -482,9 +506,14 @@ export function AdminInventoryView() {
         </div>
       )}
 
-      {/* ITEMS & UNITS TAB */}
+      {/* ITEMS & UNITS TAB PANEL */}
       {activeTab === "items" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div
+          id="panel-items"
+          role="tabpanel"
+          aria-labelledby="tab-items"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+        >
           {/* Items list */}
           <div
             className={
@@ -509,43 +538,43 @@ export function AdminInventoryView() {
                     <div
                       key={item.id}
                       onClick={() => setSelectedItemForUnits(item)}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer bg-white ${
+                      className={`p-4 rounded-xl border transition-all cursor-pointer bg-surface ${
                         isSelected
-                          ? "border-slate-900 ring-2 ring-slate-900/10 shadow-sm"
-                          : "border-slate-200 hover:border-slate-300 shadow-xs"
+                          ? "border-accent ring-2 ring-accent/10 shadow-sm"
+                          : "border-border hover:border-border-strong shadow-xs"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-slate-900 text-sm">
+                            <h3 className="font-semibold text-fg text-sm">
                               {item.name}
                             </h3>
                             {cat && (
-                              <span className="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium bg-surface-subtle text-fg-muted px-1.5 py-0.5 rounded border border-border-subtle">
                                 {cat.name}
                               </span>
                             )}
                           </div>
-                          <p className="mt-1 text-xs text-slate-500 line-clamp-1">
+                          <p className="mt-1 text-xs text-fg-muted line-clamp-1">
                             {item.description || "Tidak ada deskripsi"}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           {item.is_lendable ? (
-                            <Badge variant="emerald" size="sm">
+                            <Badge variant="available" size="sm">
                               Dapat Dipinjam
                             </Badge>
                           ) : (
-                            <Badge variant="rose" size="sm">
+                            <Badge variant="overdue" size="sm">
                               Non-Pinjam
                             </Badge>
                           )}
                         </div>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                        <span className="text-slate-400 font-mono text-[11px]">
+                      <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border-subtle">
+                        <span className="text-fg-subtle font-mono font-tabular text-[11px]">
                           ID: {item.id.slice(0, 8)}
                         </span>
                         <div
@@ -554,15 +583,14 @@ export function AdminInventoryView() {
                         >
                           <Button
                             variant="ghost"
-                            size="sm"
+                            className="min-h-[44px]"
                             onClick={() => handleOpenEditItem(item)}
                           >
                             Ubah
                           </Button>
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            className="min-h-[44px] text-status-overdue hover:text-status-overdue hover:bg-status-overdue-bg"
                             onClick={() => handleDeleteItem(item.id)}
                           >
                             Hapus
@@ -578,20 +606,20 @@ export function AdminInventoryView() {
 
           {/* Physical units panel */}
           {selectedItemForUnits && (
-            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="lg:col-span-7 bg-surface rounded-2xl border border-border p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
                 <div>
-                  <h2 className="font-semibold text-slate-900">
+                  <h2 className="font-semibold text-fg">
                     Unit Fisik: {selectedItemForUnits.name}
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-fg-muted font-tabular">
                     Total: {units.length} unit fisik terdaftar
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="primary"
-                    size="sm"
+                    className="min-h-[44px]"
                     onClick={() => {
                       setUnitBarcode("");
                       setUnitSerial("");
@@ -604,7 +632,7 @@ export function AdminInventoryView() {
                   </Button>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    className="min-h-[44px]"
                     onClick={() => setSelectedItemForUnits(null)}
                     title="Tutup Panel"
                   >
@@ -623,7 +651,7 @@ export function AdminInventoryView() {
                   onAction={() => setIsAddUnitModalOpen(true)}
                 />
               ) : (
-                <div className="divide-y divide-slate-100 max-h-[520px] overflow-y-auto">
+                <div className="divide-y divide-border-subtle max-h-[520px] overflow-y-auto">
                   {units.map((unit) => (
                     <div
                       key={unit.id}
@@ -631,19 +659,19 @@ export function AdminInventoryView() {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-900 text-sm">
+                          <span className="font-mono font-tabular font-bold text-fg text-sm">
                             {unit.barcode}
                           </span>
                           <UnitStatusBadge status={unit.status} />
                           <ConditionBadge condition={unit.condition} />
                         </div>
                         {unit.serial_number && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-fg-muted font-mono font-tabular">
                             Serial: {unit.serial_number}
                           </p>
                         )}
                         {unit.notes && (
-                          <p className="text-xs text-slate-400 italic">
+                          <p className="text-xs text-fg-subtle italic">
                             Catatan: {unit.notes}
                           </p>
                         )}
@@ -652,13 +680,12 @@ export function AdminInventoryView() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <Button
                           variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleMaintenance(unit)}
-                          className={
+                          className={`min-h-[44px] ${
                             unit.status === "maintenance"
-                              ? "text-emerald-700 border-emerald-300 hover:bg-emerald-50"
-                              : "text-amber-700 border-amber-300 hover:bg-amber-50"
-                          }
+                              ? "text-status-available border-status-available-border hover:bg-status-available-bg"
+                              : "text-status-reserved border-status-reserved-border hover:bg-status-reserved-bg"
+                          }`}
+                          onClick={() => handleToggleMaintenance(unit)}
                         >
                           {unit.status === "maintenance"
                             ? "Selesai Rawat"
@@ -666,7 +693,7 @@ export function AdminInventoryView() {
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          className="min-h-[44px]"
                           onClick={() => {
                             setEditingUnitCondition(unit);
                             setNewCondition(unit.condition);
@@ -677,7 +704,7 @@ export function AdminInventoryView() {
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          className="min-h-[44px]"
                           onClick={() => setViewingLogsUnit(unit)}
                         >
                           Riwayat
@@ -721,29 +748,36 @@ export function AdminInventoryView() {
             placeholder="kamera-lensa"
             value={catSlug}
             onChange={(e) => setCatSlug(e.target.value)}
+            className="font-mono font-tabular"
             required
           />
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Deskripsi (Opsional)
             </label>
             <textarea
               rows={2}
-              className="block w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="block w-full rounded-lg border border-border-strong bg-surface p-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
               placeholder="Keterangan kategori peralatan"
               value={catDesc}
               onChange={(e) => setCatDesc(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setIsCategoryModalOpen(false)}
             >
               Batal
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmittingCat}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="min-h-[44px]"
+              isLoading={isSubmittingCat}
+            >
               Simpan
             </Button>
           </div>
@@ -772,41 +806,47 @@ export function AdminInventoryView() {
             required
           />
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Deskripsi (Opsional)
             </label>
             <textarea
               rows={3}
-              className="block w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="block w-full rounded-lg border border-border-strong bg-surface p-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
               placeholder="Spesifikasi atau informasi penting peralatan"
               value={itemDesc}
               onChange={(e) => setItemDesc(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-h-[44px]">
             <input
               type="checkbox"
               id="is-lendable"
               checked={itemIsLendable}
               onChange={(e) => setItemIsLendable(e.target.checked)}
-              className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+              className="h-5 w-5 rounded border-border-strong text-accent focus:ring-accent cursor-pointer"
             />
             <label
               htmlFor="is-lendable"
-              className="text-sm font-medium text-slate-700 cursor-pointer"
+              className="text-sm font-medium text-fg cursor-pointer select-none"
             >
               Dapat diajukan pinjam oleh anggota (Lendable)
             </label>
           </div>
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setIsItemModalOpen(false)}
             >
               Batal
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmittingItem}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="min-h-[44px]"
+              isLoading={isSubmittingItem}
+            >
               Simpan
             </Button>
           </div>
@@ -825,6 +865,7 @@ export function AdminInventoryView() {
             placeholder="Contoh: CAM-001"
             value={unitBarcode}
             onChange={(e) => setUnitBarcode(e.target.value)}
+            className="font-mono font-tabular"
             required
           />
           <Input
@@ -832,6 +873,7 @@ export function AdminInventoryView() {
             placeholder="SN-12345678"
             value={unitSerial}
             onChange={(e) => setUnitSerial(e.target.value)}
+            className="font-mono font-tabular"
           />
           <Select
             label="Kondisi Awal"
@@ -851,15 +893,21 @@ export function AdminInventoryView() {
             value={unitNotes}
             onChange={(e) => setUnitNotes(e.target.value)}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setIsAddUnitModalOpen(false)}
             >
               Batal
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmittingUnit}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="min-h-[44px]"
+              isLoading={isSubmittingUnit}
+            >
               Tambahkan Unit
             </Button>
           </div>
@@ -891,10 +939,11 @@ export function AdminInventoryView() {
             value={conditionReason}
             onChange={(e) => setConditionReason(e.target.value)}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button
               type="button"
               variant="ghost"
+              className="min-h-[44px]"
               onClick={() => setEditingUnitCondition(null)}
             >
               Batal
@@ -902,6 +951,7 @@ export function AdminInventoryView() {
             <Button
               type="submit"
               variant="primary"
+              className="min-h-[44px]"
               isLoading={isSubmittingCondition}
             >
               Perbarui Kondisi
@@ -921,11 +971,11 @@ export function AdminInventoryView() {
           {isLoadingLogs ? (
             <LoadingSpinner size="sm" />
           ) : conditionLogs.length === 0 ? (
-            <p className="text-xs text-slate-500 italic py-4 text-center">
+            <p className="text-xs text-fg-muted italic py-4 text-center">
               Belum ada riwayat perubahan kondisi yang tercatat.
             </p>
           ) : (
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+            <div className="max-h-72 overflow-y-auto divide-y divide-border-subtle">
               {conditionLogs.map((log) => (
                 <div key={log.id} className="py-2.5 text-xs">
                   <div className="flex items-center justify-between">
@@ -933,17 +983,17 @@ export function AdminInventoryView() {
                       {log.previous_condition && (
                         <>
                           <ConditionBadge condition={log.previous_condition} />
-                          <span className="text-slate-400">→</span>
+                          <span className="text-fg-subtle">→</span>
                         </>
                       )}
                       <ConditionBadge condition={log.new_condition} />
                     </div>
-                    <span className="text-slate-400">
+                    <span className="text-fg-subtle font-mono font-tabular">
                       {new Date(log.created_at).toLocaleString("id-ID")}
                     </span>
                   </div>
                   {log.reason && (
-                    <p className="mt-1 text-slate-600 bg-slate-50 p-1.5 rounded">
+                    <p className="mt-1 text-fg bg-surface-subtle p-2 rounded border border-border-subtle">
                       Alasan: {log.reason}
                     </p>
                   )}
@@ -951,8 +1001,12 @@ export function AdminInventoryView() {
               ))}
             </div>
           )}
-          <div className="flex justify-end pt-3 border-t border-slate-100">
-            <Button variant="ghost" onClick={() => setViewingLogsUnit(null)}>
+          <div className="flex justify-end pt-3 border-t border-border-subtle">
+            <Button
+              variant="ghost"
+              className="min-h-[44px]"
+              onClick={() => setViewingLogsUnit(null)}
+            >
               Tutup
             </Button>
           </div>

@@ -71,13 +71,13 @@ export function NotificationsView() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-fg">
             Pusat Notifikasi
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-fg-muted">
             Pemberitahuan persetujuan peminjaman, jatuh tempo, dan aktivitas
             peralatan untuk{" "}
-            <span className="font-semibold text-slate-800">{activeOrg.name}</span>.
+            <span className="font-semibold text-fg">{activeOrg.name}</span>.
           </p>
         </div>
 
@@ -86,10 +86,10 @@ export function NotificationsView() {
           <button
             type="button"
             onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`min-h-[44px] px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center ${
               filter === "all"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-accent text-accent-fg shadow-xs"
+                : "bg-surface text-fg-muted hover:text-fg border border-border hover:bg-surface-hover"
             }`}
           >
             Semua
@@ -97,10 +97,10 @@ export function NotificationsView() {
           <button
             type="button"
             onClick={() => setFilter("unread")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`min-h-[44px] px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center ${
               filter === "unread"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-accent text-accent-fg shadow-xs"
+                : "bg-surface text-fg-muted hover:text-fg border border-border hover:bg-surface-hover"
             }`}
           >
             Belum Dibaca
@@ -120,23 +120,29 @@ export function NotificationsView() {
           }
         />
       ) : (
-        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="divide-y divide-border-subtle rounded-2xl border border-border bg-surface shadow-xs overflow-hidden">
           {notifications.map((notif) => {
             const isUnread = notif.status === "unread";
             return (
               <div
                 key={notif.id}
                 className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-3 transition-colors ${
-                  isUnread ? "bg-sky-50/40" : "bg-white"
+                  isUnread ? "bg-status-borrowed-bg/30" : "bg-surface"
                 }`}
               >
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
+                    {isUnread && (
+                      <span
+                        className="w-2 h-2 rounded-full bg-status-overdue shrink-0"
+                        aria-hidden="true"
+                      />
+                    )}
                     <h3
                       className={`text-sm ${
                         isUnread
-                          ? "font-bold text-slate-900"
-                          : "font-medium text-slate-700"
+                          ? "font-bold text-fg"
+                          : "font-medium text-fg-muted"
                       }`}
                     >
                       {notif.title}
@@ -151,10 +157,10 @@ export function NotificationsView() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-xs text-fg-muted leading-relaxed">
                     {notif.message}
                   </p>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-fg-subtle font-tabular">
                     {formatDate(notif.created_at)}
                   </p>
                 </div>
@@ -164,6 +170,7 @@ export function NotificationsView() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="min-h-[44px]"
                       onClick={() => handleMarkAsRead(notif.id)}
                       isLoading={markingId === notif.id}
                     >
