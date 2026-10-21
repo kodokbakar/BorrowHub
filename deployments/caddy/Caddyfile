@@ -4,6 +4,42 @@
 }
 
 :8080 {
+	@identity_api {
+		host borrowhub.localhost
+		path /api/identity/*
+	}
+	handle @identity_api {
+		uri strip_prefix /api/identity
+		reverse_proxy 127.0.0.1:8081
+	}
+
+	@inventory_api {
+		host borrowhub.localhost
+		path /api/inventory/*
+	}
+	handle @inventory_api {
+		uri strip_prefix /api/inventory
+		reverse_proxy 127.0.0.1:8082
+	}
+
+	@lending_api {
+		host borrowhub.localhost
+		path /api/lending/*
+	}
+	handle @lending_api {
+		uri strip_prefix /api/lending
+		reverse_proxy 127.0.0.1:8083
+	}
+
+	@notification_api {
+		host borrowhub.localhost
+		path /api/notification/*
+	}
+	handle @notification_api {
+		uri strip_prefix /api/notification
+		reverse_proxy 127.0.0.1:8084
+	}
+
 	@web host borrowhub.localhost
 	handle @web {
 		reverse_proxy 127.0.0.1:5173 {
@@ -24,6 +60,11 @@
 	@lending host lending.borrowhub.localhost
 	handle @lending {
 		reverse_proxy 127.0.0.1:8083
+	}
+
+	@notification host notification.borrowhub.localhost
+	handle @notification {
+		reverse_proxy 127.0.0.1:8084
 	}
 
 	@rabbitmq host rabbitmq.borrowhub.localhost

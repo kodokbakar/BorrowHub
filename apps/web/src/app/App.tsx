@@ -1,43 +1,75 @@
-const foundations = [
-  "Bun workspace",
-  "React 19",
-  "TypeScript",
-  "Vite",
-  "Tailwind CSS",
-];
+import React, { useEffect, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Header } from "../components/Header";
+import { Navigation } from "../components/Navigation";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { AuthProvider, useAuth } from "../context/AuthContext";
+import { AdminInventoryView } from "../views/AdminInventoryView";
+import { AdminLendingView } from "../views/AdminLendingView";
+import { AuthView } from "../views/AuthView";
+import { CatalogView } from "../views/CatalogView";
+import { MyLoansView } from "../views/MyLoansView";
+import { NotificationsView } from "../views/NotificationsView";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 1000 * 10,
+    },
+  },
+});
+
+function AppContent() {
+  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const [currentTab, setCurrentTab] = useState<string>("catalog");
+
+  useEffect(() => {
+    if (!isAdmin && currentTab.startsWith("admin-")) {
+      setCurrentTab("catalog");
+    }
+  }, [isAdmin, currentTab]);
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center space-y-3">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white font-bold text-xl shadow-md">
+            B
+          </div>
+          <LoadingSpinner size="md" />
+          <p className="text-xs text-slate-500">Memuat sesi BorrowHub...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthView />;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900">
+      <Header currentTab={currentTab} onTabChange={setCurrentTab} />
+      <Navigation currentTab={currentTab} onTabChange={setCurrentTab} />
+
+      <main className="flex-1 pb-16">
+        {currentTab === "catalog" && <CatalogView />}
+        {currentTab === "my-loans" && <MyLoansView />}
+        {currentTab === "notifications" && <NotificationsView />}
+        {currentTab === "admin-inventory" && isAdmin && <AdminInventoryView />}
+        {currentTab === "admin-lending" && isAdmin && <AdminLendingView />}
+      </main>
+    </div>
+  );
+}
 
 export function App() {
   return (
-    <main className="min-h-screen px-6 py-16 sm:px-10">
-      <section className="mx-auto max-w-4xl">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-slate-500">
-          BorrowHub
-        </p>
-
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-          Peminjaman peralatan yang jelas dan dapat dipercaya.
-        </h1>
-
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          Foundation frontend berhasil dijalankan. Fitur produk akan ditambahkan
-          secara bertahap berdasarkan contract dan domain BorrowHub.
-        </p>
-
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {foundations.map((foundation) => (
-            <div
-              key={foundation}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <p className="font-medium text-slate-900">{foundation}</p>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Terpasang dan siap digunakan.
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
