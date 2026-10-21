@@ -32,13 +32,13 @@ function AppContent() {
   }, [isAdmin, currentTab]);
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-surface-subtle">
         <div className="text-center space-y-3">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white font-bold text-xl shadow-md">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-fg font-bold text-xl shadow-md">
             B
           </div>
           <LoadingSpinner size="md" />
-          <p className="text-xs text-slate-500">Memuat sesi BorrowHub...</p>
+          <p className="text-xs text-fg-subtle">Memuat sesi BorrowHub...</p>
         </div>
       </div>
     );
@@ -49,7 +49,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900">
+    <div className="min-h-screen bg-surface-subtle flex flex-col text-fg">
       <Header currentTab={currentTab} onTabChange={setCurrentTab} />
       <Navigation currentTab={currentTab} onTabChange={setCurrentTab} />
 
