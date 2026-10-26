@@ -9,6 +9,15 @@ updates:
       time: "03:00"
       timezone: Asia/Jakarta
     open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
 
   - package-ecosystem: gomod
     directories:
@@ -22,6 +31,11 @@ updates:
       time: "03:00"
       timezone: Asia/Jakarta
     open-pull-requests-limit: 5
+    groups:
+      pgx:
+        patterns:
+          - "github.com/jackc/pgx*"
+          - "github.com/jackc/pg*"
 
   - package-ecosystem: github-actions
     directory: /
@@ -31,3 +45,7 @@ updates:
       time: "03:00"
       timezone: Asia/Jakarta
     open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
